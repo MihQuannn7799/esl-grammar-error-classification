@@ -135,10 +135,13 @@ Paired bootstrap must use the same resampled connected groups for all models. Se
 
 Historical functions such as `verify_lock` check the original source/artifact snapshot. This curated export omits reporting modules and private inputs and therefore cannot satisfy that historical lock. The historical evaluator also has fixed output paths; do not run it blindly or edit stored hashes to bypass guards. A source checkout and passing synthetic tests do not imply full raw-to-test reproduction.
 
-## 8. Automated project checks
+## 8. Continuous integration
+
+The [CI workflow](../.github/workflows/ci.yml) installs the locked base environment and optional BERT dependency, then runs the synthetic suite and corpus-free demo on Windows and Linux. It does not download NUCLE or pretrained task weights, rerun the research benchmark, or adjudicate labels.
+
+To run the same project checks locally:
 
 ```bash
-uv run --no-sync python scripts/check_repository.py
+uv run --no-sync python -m pytest tests -q -ra
+uv run --no-sync python -m examples.synthetic_demo
 ```
-
-The standard-library-only checker inspects Git-tracked and non-ignored candidate files for broken local Markdown links, excluded research artifacts, row-level aggregate CSV fields, Python syntax, and unresolved local `src` imports. It writes nothing. The [CI workflow](../.github/workflows/ci.yml) installs the locked base environment and optional BERT dependency, then runs this checker, the synthetic suite, and demo on Windows and Linux. CI does not download NUCLE or pretrained task weights, rerun the research benchmark, or adjudicate labels.

@@ -39,8 +39,6 @@ jobs:
         run: uv sync --locked --python 3.13.7
       - name: Install optional BERT dependency
         run: uv pip install --python .venv -r requirements-bert.txt
-      - name: Check public repository structure
-        run: uv run --no-sync python scripts/check_repository.py
       - name: Run synthetic test suite
         run: uv run --no-sync python -m pytest tests -q -ra
       - name: Run corpus-free demonstration

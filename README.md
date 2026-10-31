@@ -47,10 +47,9 @@ For the complete test suite, including tiny randomly initialized BERT models:
 ```bash
 uv pip install --python .venv -r requirements-bert.txt
 uv run --no-sync python -m pytest tests -q
-uv run --no-sync python scripts/check_repository.py
 ```
 
-The last local full-suite check was **106 passed, 1 skipped**; the skip requires an undistributed licensed corpus fixture. The live badge reports CI status independently. Tests use synthetic inputs and do not download a BERT checkpoint. See [RUNNING.md](docs/RUNNING.md) for training prerequisites and [validation metadata](results/validation.json) for the exact local verification scope.
+The last local full-suite check was **106 passed, 1 skipped**; the skip requires an undistributed licensed corpus fixture. The live badge reports CI status independently. Tests use synthetic inputs and do not download a BERT checkpoint. See [RUNNING.md](docs/RUNNING.md) for training prerequisites.
 
 ## What the project demonstrates
 
@@ -71,7 +70,6 @@ tests/        Synthetic regression, model, and training-lifecycle tests
 configs/      BERT experiment configuration
 docs/         Architecture, running instructions, and result interpretation
 results/      Aggregate CSVs, figures, and English Markdown reports
-scripts/      Lightweight repository checks
 .github/      Windows/Linux CI workflow
 ```
 
@@ -101,7 +99,7 @@ This section covers **every Python file and every other public file in this repo
 
 | Level | Required local inputs | What becomes available |
 |---|---|---|
-| A: public checkout | Git checkout, base dependencies; optional `transformers` for BERT tests | Demo, repository checks, synthetic tests, library imports, reading reports/results |
+| A: public checkout | Git checkout, base dependencies; optional `transformers` for BERT tests | Demo, synthetic tests, library imports, reading reports/results |
 | B: authorized research data | NUCLE SGML plus matching annotation CSV, quality audit, overlap-review decisions, source checksum, and a committed HEAD | Preparation and connected-group split |
 | C: prepared experiment | Level B outputs; train-only features/encoder for classical models; local pretrained model metadata/files for BERT | Validation training, ablations, locked BERT selection/test |
 | H: historical reproduction | Original protocol documents, compatible phase-specific summaries, predictions, checkpoints, manifests, and locks | Fixed-path sensitivity/diagnostic/replay scripts below |
@@ -113,7 +111,7 @@ The exact historical review inputs, protocols, row-level predictions, and task c
 Use fresh output directories where the implementation requires them. Some fixed-path diagnostics write into `reports/`; do not batch-execute every `.py`. **Do not pass `--help` to scripts without argparse:** `nucle_final_selection.py --help` would start its fitting branch, and the downloader does not interpret a help flag.
 
 <details>
-<summary><strong>A. Public demo and repository checker</strong></summary>
+<summary><strong>A. Public demo</strong></summary>
 
 #### `examples/synthetic_demo.py`
 
@@ -122,14 +120,6 @@ uv run --no-sync python -m examples.synthetic_demo
 ```
 
 Needs base dependencies including spaCy's English package. Runs the actual feature extractor, train-only encoder, and LR on hand-written examples; prints predictions and toy metrics. No corpus/checkpoint download and no output files. The toy score is not a NUCLE benchmark.
-
-#### `scripts/check_repository.py`
-
-```bash
-uv run --no-sync python scripts/check_repository.py
-```
-
-Needs Git and standard-library Python only; no ML dependencies if run with an existing Python interpreter. Checks public candidate files, local Markdown links, aggregate CSV headers, syntax, and local `src` imports. Prints a summary or exits nonzero on failure; writes nothing.
 
 </details>
 
@@ -415,7 +405,7 @@ These files are consumed by a tool or viewed as artifacts; they are not standalo
 |---|---|
 | [.editorconfig](.editorconfig) | Read automatically by compatible editors; formatting settings, not an executable. |
 | [.gitattributes](.gitattributes) | Read automatically by Git for text/binary and line-ending handling. |
-| [.github/workflows/ci.yml](.github/workflows/ci.yml) | Runs on GitHub after pushes/PRs, or Actions -> CI -> Run workflow; tests/demo/checker on Windows/Linux. |
+| [.github/workflows/ci.yml](.github/workflows/ci.yml) | Runs on GitHub after pushes/PRs, or Actions -> CI -> Run workflow; tests/demo on Windows/Linux. |
 | [.gitignore](.gitignore) | Read automatically by Git to exclude local/private artifacts; not a data-processing script. |
 | [.python-version](.python-version) | Read by Python/uv tooling; the documented commands explicitly select Python 3.13.7. |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Read development, test, data-handling, and experiment contribution instructions. |
@@ -431,7 +421,6 @@ These files are consumed by a tool or viewed as artifacts; they are not standalo
 | [results/README.md](results/README.md) | Open the index for published aggregate results and report provenance. |
 | [results/classical_ablations.csv](results/classical_ablations.csv) | View all 20 classical/baseline pipeline names, CIs and aliases. |
 | [results/confusions.csv](results/confusions.csv) | View aggregate off-diagonal error counts; not individual examples. |
-| [results/export_manifest.json](results/export_manifest.json) | Read publication SHA-256/Git-blob hashes; not a training config or runnable historical lock. |
 | [results/figures/benchmark_ci.png](results/figures/benchmark_ci.png) | View the published test-F1/CI plot; no execution. |
 | [results/figures/paired_differences.png](results/figures/paired_differences.png) | View paired difference intervals; no execution. |
 | [results/figures/per_class_f1.png](results/figures/per_class_f1.png) | View published class-specific F1; no execution. |
@@ -443,7 +432,6 @@ These files are consumed by a tool or viewed as artifacts; they are not standalo
 | [results/reports/final-report.md](results/reports/final-report.md) | Read the complete English study with 34 tables and 14 references; no report generator required. |
 | [results/reports/presentation.md](results/reports/presentation.md) | Read the 12 English presentation sections and speaker notes. |
 | [results/seed_results.csv](results/seed_results.csv) | View selected BERT seed/checkpoint outcomes and primary designation. |
-| [results/validation.json](results/validation.json) | Read JSON describing local checks, historical scopes, and CI configuration; not model input. |
 | [results/validation_grid.csv](results/validation_grid.csv) | View BERT configuration means and sample standard deviations. |
 | [tests/README.md](tests/README.md) | Read test inputs, optional dependencies, expected skips, and Git HEAD requirement. |
 | [uv.lock](uv.lock) | Consumed by the same locked uv installation; not runnable Python and not the historical model-selection lock. |

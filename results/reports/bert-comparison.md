@@ -58,8 +58,6 @@ Public aggregate evidence:
 - [overall_results.csv](../overall_results.csv) and [per_class_metrics.csv](../per_class_metrics.csv): overall/class-specific results.
 - [validation_grid.csv](../validation_grid.csv) and [seed_results.csv](../seed_results.csv): configuration selection and seed outcomes.
 - [paired_differences.csv](../paired_differences.csv): primary BERT comparisons and confidence intervals.
-- [validation.json](../validation.json): public-code validation scope, distinct from the 61 historical BERT checks.
-- [export_manifest.json](../export_manifest.json): hashes for this public edition, distinct from historical research source manifests.
 
 The research analysis also used bootstrap weights, row-level predictions, private audit packets, and verification manifests that are excluded here. Its analysis script can write a fresh output with compatible historical inputs, but aggregate CSVs alone do not recreate the paired bootstrap. Language review is a judgment process, not a deterministic metric recomputation. Follow [RUNNING.md](../../docs/RUNNING.md) for the actual public workflow.
 

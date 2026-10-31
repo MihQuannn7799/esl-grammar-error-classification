@@ -9,7 +9,6 @@ uv sync --locked --python 3.13.7
 uv pip install --python .venv -r requirements-bert.txt
 uv run --no-sync python -m pytest tests -q
 uv run --no-sync python -m examples.synthetic_demo
-uv run --no-sync python scripts/check_repository.py
 ```
 
 The licensed boundary fixture is intentionally absent. Do not add corpus excerpts to make its test stop skipping. Synthetic BERT tests use local random models, not downloaded pretrained weights.
@@ -21,7 +20,7 @@ The licensed boundary fixture is intentionally absent. Do not add corpus excerpt
 3. Run the checks relevant to the change; add regression tests for substantive behavior changes rather than tests that merely repeat implementation.
 4. Describe the resulting behavior, evidence, and remaining limitations in the pull request.
 
-The CI workflow runs the full synthetic suite, demo, and repository checks on Windows and Linux. A passing suite validates those checks, not exact historical benchmark reproduction.
+The CI workflow runs the full synthetic suite and demo on Windows and Linux. A passing suite validates those checks, not exact historical benchmark reproduction.
 
 ## Data and experiments
 
@@ -35,7 +34,6 @@ The CI workflow runs the full synthetic suite, demo, and repository checks on Wi
 
 English Markdown reports are maintained under `results/reports/`. `results/*.csv` and figures are saved research evidence; changing their presentation must not alter numerical conclusions or imply new training. Keep relative links working and update the documentation index when adding a guide.
 
-`results/export_manifest.json` records public file contents at publication. Refresh it when publishing a changed tree; it is not the historical research lock and is not a substitute for the original private artifacts. Its Git-blob hashes describe committed content, which may differ from checkout line endings on Windows.
 
 ## Attribution
 

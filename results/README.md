@@ -30,5 +30,3 @@ The classical ablation table contains Full-minus-D aliases of S+L+P+M; names do 
 These replace the three Vietnamese PDFs in the current repository tree. Numerical results and conclusions are unchanged; links and code-scope notes are adapted to the curated public export. Historical evidence not included here is described as such. For runnable commands, use [RUNNING.md](../docs/RUNNING.md). The shorter [results guide](../docs/RESULTS.md) remains available alongside the complete reports.
 
 No CSV here contains per-sample inputs/predictions, essay text, correction text, or private review notes. New experiment outputs belong under the ignored `reports/` tree, not in this saved aggregate snapshot.
-
-[validation.json](validation.json) records the export's test/demo checks and environment. [export_manifest.json](export_manifest.json) identifies each published file with its SHA-256 and Git blob SHA; it describes this curated export, not the historical research lock.

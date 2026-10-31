@@ -641,7 +641,7 @@ Full-minus-D aliases S+L+P+M for each model; pipeline names do not count distinc
 | Historical document generators/notebooks | Research report/figure generation and snapshots; omitted from portfolio |
 | tests/ | Synthetic invariants, features/models, metrics, bootstrap, serialization/lifecycle checks |
 
-Public aggregates/figures/reports are under [results](../README.md). Corpus text/corrections are omitted; IDs and qualitative descriptions support discussion without reproducing the corpus. Historical manifests keep their snapshot meaning; [export_manifest.json](../export_manifest.json) identifies this public edition. Historical evidence mentioned here is not necessarily distributed.
+Public aggregates/figures/reports are under [results](../README.md). Corpus text/corrections are omitted; IDs and qualitative descriptions support discussion without reproducing the corpus. Historical research manifests retain their snapshot meaning; this public portfolio is not that locked workspace. Historical evidence mentioned here is not necessarily distributed.
 
 ## Appendix C. Contributions, handover, and AI assistance
 
