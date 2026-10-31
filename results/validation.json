@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-31",
+  "scope": "Public portfolio tests and synthetic demo, not research retraining",
+  "environment": {
+    "python": "3.13.7",
+    "torch": "2.14.0",
+    "numpy": "2.5.3",
+    "spacy": "3.8.7",
+    "transformers": "4.57.6",
+    "pytest": "8.4.2"
+  },
+  "pytest": {
+    "passed": 106,
+    "skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "skip_reason": "Licensed NUCLE boundary fixture is intentionally not distributed",
+    "command": "python -B -m pytest tests -q -p no:cacheprovider"
+  },
+  "synthetic_demo": {
+    "status": "passed",
+    "train_examples": 10,
+    "holdout_examples": 5,
+    "feature_columns": 213,
+    "note": "Hand-written demonstration; scores are not research estimates"
+  },
+  "checks": {
+    "no_reporting_package_or_imports": true,
+    "no_corpus_checkpoints_or_private_packets": true,
+    "result_csvs_aggregate_only": true,
+    "markdown_local_links_valid": true,
+    "known_credential_patterns_absent": true,
+    "original_workspace_unchanged": true
+  },
+  "fresh_dependency_install": "Not rerun; existing research environment used. An offline lock check could not resolve the remote spaCy wheel in an empty cache."
+}

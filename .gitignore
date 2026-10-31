@@ -1,0 +1,36 @@
+# Environments, build products, and caches
+.venv/
+.venv-*/
+.cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest-tmp/
+.ipynb_checkpoints/
+*.egg-info/
+build/
+dist/
+.DS_Store
+
+# Corpus and derived research artifacts are never published.
+/data/
+/data_set/
+/reports/
+/runs/
+/tests/fixtures/
+/src/reporting/
+*.pt
+*.pth
+*.safetensors
+*.onnx
+*.sgml
+*.zip
+
+# Credentials and machine-local settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.vscode/
+.idea/
