@@ -34,3 +34,11 @@ dist/
 *.key
 .vscode/
 .idea/
+
+# Internal review/replay helpers are excluded from the portfolio.
+/src/evaluation/bert_audit_review.py
+/src/evaluation/nucle_final_error_audit.py
+/src/evaluation/review_audit_evidence.py
+/src/evaluation/review_saved_evidence.py
+/src/evaluation/verify_final_results.py
+/src/evaluation/reproduce_evaluation_pipeline.py

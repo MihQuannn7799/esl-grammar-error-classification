@@ -89,7 +89,7 @@ src/
   features/     POS baseline and train-only S/L/P/M/D encoding
   models/       Sparse LR, Gini Tree, BERT span readout
   training/     Benchmarks, ablations, selection, BERT train/lock/test
-  evaluation/   Metrics, bootstrap, diagnostics, saved-evidence verification
+  evaluation/   Metrics, bootstrap, and experiment diagnostics
 tests/          Synthetic regression and lifecycle tests
 examples/       Corpus-free end-to-end demonstration
 configs/        BERT experiment configuration
@@ -108,7 +108,7 @@ The former `src/reporting/` package is intentionally absent. Document-export val
 | Inspect aggregate metrics, ablations, figures, and final reports | Replay original predictions/checkpoints or historical lock hashes |
 | Train a new experiment after supplying compatible inputs | Reproduce exact research scores in the original environment |
 
-The repository excludes NUCLE text/corrections, row-level predictions, review packets, encoders/vocabularies, model checkpoints, caches, private work logs, old archives, and report generators. Historical verification scripts remain as research code, but depend on artifacts not supplied here; they are not a fresh-clone quick start. Research-era manifests and source hashes are not regenerated to imply that this curated export is the original locked workspace.
+The repository excludes NUCLE text/corrections, row-level predictions, review packets, encoders/vocabularies, model checkpoints, caches, private work logs, old archives, and report generators. Internal post-prediction audit/review helpers and the one-off historical replay driver are omitted. Shared evaluation routines and data-integrity checks used by the experiments/tests remain; historical test-scoring routines still require private artifacts and are not a fresh-clone quick start. Research-era manifests and source hashes are not regenerated to imply that this curated export is the original locked workspace.
 
 ## Documentation
 

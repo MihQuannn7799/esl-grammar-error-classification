@@ -1,6 +1,6 @@
 {
   "date": "2026-10-31",
-  "scope": "Public portfolio tests and synthetic demo, not research retraining",
+  "scope": "Dependency-safe public portfolio cleanup; tests and synthetic demo, not research retraining",
   "environment": {
     "python": "3.13.7",
     "torch": "2.14.0",
@@ -30,7 +30,24 @@
     "result_csvs_aggregate_only": true,
     "markdown_local_links_valid": true,
     "known_credential_patterns_absent": true,
-    "original_workspace_unchanged": true
+    "original_workspace_unchanged": true,
+    "local_python_imports_resolve": true,
+    "no_references_to_removed_helpers_in_retained_python": true,
+    "retained_python_files_unchanged": true,
+    "published_research_results_unchanged": true
   },
-  "fresh_dependency_install": "Not rerun; existing research environment used. An offline lock check could not resolve the remote spaCy wheel in an empty cache."
+  "fresh_dependency_install": "Not rerun; existing research environment used. An offline lock check could not resolve the remote spaCy wheel in an empty cache.",
+  "cleanup": {
+    "removed_internal_helpers": [
+      "src/evaluation/bert_audit_review.py",
+      "src/evaluation/nucle_final_error_audit.py",
+      "src/evaluation/review_audit_evidence.py",
+      "src/evaluation/review_saved_evidence.py",
+      "src/evaluation/verify_final_results.py",
+      "src/evaluation/reproduce_evaluation_pipeline.py"
+    ],
+    "modules_checked": 52,
+    "local_import_edges": 137,
+    "retained": "Metrics, bootstrap, data-quality/offset guards, training lifecycle checks, and experimental diagnostics used by remaining code/tests"
+  }
 }
