@@ -145,3 +145,7 @@ To run the same project checks locally:
 uv run --no-sync python -m pytest tests -q -ra
 uv run --no-sync python -m examples.synthetic_demo
 ```
+
+## 9. Clean checkout and line endings
+
+Repository text files use LF line endings, enforced by `.gitattributes` on all platforms. A fresh clone should have no tracked changes; no global Git configuration change is required. Verify with `git status --short`. CI also checks `git diff --exit-code HEAD --` immediately after checkout, before installing dependencies.
