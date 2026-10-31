@@ -1,5 +1,7 @@
 # Running the project
 
+For the command, input requirements, output behavior, and library/test usage of **every public file**, use the [complete file-by-file runbook in README](../README.md#complete-file-by-file-runbook). This guide explains the normal end-to-end workflow.
+
 All commands run from a Git checkout at the repository root. Start with `git clone https://github.com/MihQuannn7799/esl-grammar-error-classification.git` and `cd esl-grammar-error-classification`. `uv run --no-sync` uses the environment prepared by the installation step without removing optional packages installed afterward.
 
 ## 1. Install the environment

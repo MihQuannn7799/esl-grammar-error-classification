@@ -7,6 +7,8 @@
 3. Read [Results](RESULTS.md) for model selection, confidence intervals, and limitations.
 4. Use [Running the project](RUNNING.md) for environment setup and research-input requirements.
 
+The [complete README runbook](../README.md#complete-file-by-file-runbook) lists commands for every runnable script and test file, smoke imports for shared modules, and usage of configuration/results files.
+
 ## Reports and evidence
 
 | Document | Contents |

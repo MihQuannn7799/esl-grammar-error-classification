@@ -92,5 +92,19 @@
       "CONTRIBUTING.md",
       "docs/README.md"
     ]
+  },
+  "readme_runbook": {
+    "total_files": 87,
+    "python_files": 53,
+    "scripts": 23,
+    "libraries_packages": 16,
+    "test_files": 14,
+    "other_files": 34,
+    "missing_from_readme": [],
+    "research_cli_invocations_checked_against_source": 29,
+    "library_smoke_imports_passed": 16,
+    "local_markdown_links_checked": 163,
+    "research_training_download_scoring_executed": false,
+    "all_existing_source_tests_config_workflow_and_research_results_unchanged": true
   }
 }

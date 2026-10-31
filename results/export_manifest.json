@@ -1,6 +1,6 @@
 {
   "date": "2026-10-31",
-  "scope": "Professional public portfolio with pinned CI and English Markdown reports; not historical research lock",
+  "scope": "Professional public portfolio with complete README file runbook and English reports; not historical research lock",
   "excluded": [
     "src/reporting",
     "document-export validators",
@@ -53,9 +53,9 @@
       "bytes": 6046
     },
     "docs/README.md": {
-      "sha256": "fbe3e7f319741822dd14ccca1ad4c0921e3fae9b49726d4fdcfa1746f8795fa8",
-      "git_blob_sha": "7c600ab73e2c6ef58fb8f745dde38381dd688aef",
-      "bytes": 1408
+      "sha256": "9a47a603055917c2d42e00deefb638dadb179a1d7c65ca1f343f2bd76a9bb81d",
+      "git_blob_sha": "298be57fd369f47dcfac5bc0054947f791f93726",
+      "bytes": 1617
     },
     "docs/RESULTS.md": {
       "sha256": "9ae52833e3e3ea619319b2b4aa1b51744aea70d11f3344dc32d125b32258772f",
@@ -63,9 +63,9 @@
       "bytes": 5272
     },
     "docs/RUNNING.md": {
-      "sha256": "30cc7cf3a2555ad9d64599b683cc6d07ef6be0d9292b906932bad16e8f20e542",
-      "git_blob_sha": "3544b26a3e6a3b33459bcb941f61ff05a5713e1f",
-      "bytes": 9722
+      "sha256": "692f67e7a597b8ad71481f30349fdd095a008fb10e080f536474c954544d6333",
+      "git_blob_sha": "b500d167ff296549600fa20bdcc9437f065551df",
+      "bytes": 9975
     },
     "examples/__init__.py": {
       "sha256": "968934fde6258a2bc7d50e2050fd4bdcba4a196186b11f5ae10a9023713bb2da",
@@ -88,9 +88,9 @@
       "bytes": 42
     },
     "README.md": {
-      "sha256": "6f20b740054d3bb3e342df97da45ef3cf4988b513cff6c9d52e9d562b4422564",
-      "git_blob_sha": "4c1359503e73725b5359519c34328a365a1b5375",
-      "bytes": 7383
+      "sha256": "4409bca5c8b5af6b13ca6406f4df2d139d62947b01c36df596134495f91f8297",
+      "git_blob_sha": "ced87553936e54da3d21192171c03cf24a4fcd09",
+      "bytes": 40947
     },
     "requirements-bert.txt": {
       "sha256": "9ba67040194879e1a7aa13f8845918dc1a50af7f51fb860a51899d22769b2fb2",
@@ -168,9 +168,9 @@
       "bytes": 420
     },
     "results/validation.json": {
-      "sha256": "009c4536786ad9fb181b98045649d63930e1d18feccd6145ac7fdcd6f47bbbbc",
-      "git_blob_sha": "4ba1e1403f1c51405c11cc1a61b98d9863032df3",
-      "bytes": 3742
+      "sha256": "89e1819505cbd756dadb17ff9047a8aa65e11a59487d7c3f021bd25db61281fb",
+      "git_blob_sha": "4b0459e969e2447729defe4179717ab6152b4aba",
+      "bytes": 4238
     },
     "results/validation_grid.csv": {
       "sha256": "980a17dc0fdb1eee0c8f669eed51de1403852c6c603988f04d0079f9fed28831",
