@@ -25,3 +25,5 @@ uv run --no-sync python -m pytest tests -q
 The test suite does not require corpus access, pretrained research checkpoints, or report generation. It does not rerun the research benchmark or independently adjudicate gold labels. See `results/validation.json` for the checks run while preparing this export, when present; the test count from an older research snapshot is not a result for a new environment.
 
 Use a Git checkout with a committed HEAD: preparation records `git rev-parse HEAD` in its provenance, including in one synthetic integration test. A ZIP extraction without Git metadata does not satisfy that requirement.
+
+The [CI workflow](../.github/workflows/ci.yml) runs this suite with BERT enabled on Windows and Linux, followed by the corpus-free demo. Its status is separate from saved historical validation results. Run `python scripts/check_repository.py` to check public files and local documentation links without importing ML dependencies.

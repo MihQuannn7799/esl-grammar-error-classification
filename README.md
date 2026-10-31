@@ -1,128 +1,100 @@
 # ESL Grammar Error Classification
 
-Classifying **five grammatical error types at a known error span** in English learner writing, using leakage-aware feature engineering, classical machine learning, and a small fine-tuned BERT model.
+[![CI](https://github.com/MihQuannn7799/esl-grammar-error-classification/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MihQuannn7799/esl-grammar-error-classification/actions/workflows/ci.yml)
+[![Python 3.13](https://img.shields.io/badge/Python-3.13-blue)](pyproject.toml)
+[![Reports: English Markdown](https://img.shields.io/badge/Reports-English%20Markdown-2c7a7b)](results/README.md)
 
-This repository presents the modeling code, tests, run guides, and aggregate results of an academic team project. It includes a synthetic example that runs without the research corpus. Report-generation tooling and private research artifacts are excluded.
+A reproducible machine learning study of **five grammar error types in English learner writing**. The project compares linguistic-feature Logistic Regression and Decision Tree models with a fine-tuned BERT-small classifier.
 
-## Task
+**Input:** an original sentence and an already known error span. **Output:** ArtOrDet, Prep, Nn, Vform, or SVA. A sentence may contain several annotations; each annotation is a separate classification example. Automatic error detection and correction generation are outside this evaluation.
 
-```text
-Original sentence + known error offsets
-                  |
-          error-type classifier
-                  |
-    ArtOrDet / Prep / Nn / Vform / SVA
-```
+[Run the demo](#quick-start) | [Architecture](docs/ARCHITECTURE.md) | [Results](docs/RESULTS.md) | [Full report](results/reports/final-report.md) | [All documentation](docs/README.md)
 
-One annotation is one sample; a sentence can produce several samples. This evaluates error-type classification, not automatic error detection or correction generation.
+## Results at a glance
 
-| Label | Meaning | Illustrative error → correction |
-|---|---|---|
-| ArtOrDet | Article or determiner | `a apple` → `an apple` |
-| Prep | Preposition | `interested on music` → `interested in music` |
-| Nn | Noun number | `two book` → `two books` |
-| Vform | Verb form | `can goes` → `can go` |
-| SVA | Subject–verb agreement | `She go every day` → `She goes every day` |
+Evaluated on the same **2,368 test annotations in 97 connected essay groups**:
 
-The examples above are illustrative, not quotations from NUCLE.
+| Model | Validation Macro-F1 | Test Macro-F1 | Test accuracy |
+|---|---:|---:|---:|
+| Majority | 0.1184 | 0.1184 | 0.4206 |
+| POS rule | 0.7048 | 0.7106 | 0.7441 |
+| Logistic Regression, Full | 0.8067 | **0.8163** | 0.8357 |
+| Decision Tree, Full | 0.7879 | 0.7996 | 0.8095 |
+| BERT-small, primary seed | **0.8173** | 0.8146 | **0.8438** |
 
-## Main results
+![Test Macro-F1 and paired group-bootstrap confidence intervals](results/figures/benchmark_ci.png)
 
-All rows use the same 2,368 test annotations in 97 connected groups. Macro-F1 treats each error type equally.
+BERT's three-seed test mean is **0.8182 +/- 0.0038** (sample standard deviation). Its primary seed is fixed before BERT test scoring. The paired BERT-minus-LR difference is **-0.0017, CI95% [-0.0184, 0.0182]**: the evidence does not establish either model as better.
 
-| Model | Validation Macro-F1 | Test Macro-F1 | Test accuracy | Test F1 95% CI |
-|---|---:|---:|---:|---|
-| Majority | 0.1184 | 0.1184 | 0.4206 | [0.1104, 0.1279] |
-| POS rule | 0.7048 | 0.7106 | 0.7441 | [0.6766, 0.7365] |
-| Logistic Regression, Full | 0.8067 | **0.8163** | 0.8357 | [0.7876, 0.8382] |
-| Decision Tree, Full | 0.7879 | 0.7996 | 0.8095 | [0.7693, 0.8246] |
-| BERT-small, primary seed | **0.8173** | 0.8146 | **0.8438** | [0.7919, 0.8350] |
-
-![Test Macro-F1 and group-bootstrap confidence intervals](results/figures/benchmark_ci.png)
-
-BERT's test Macro-F1 across three seeds is **0.8182 ± 0.0038** (mean ± sample standard deviation). The primary seed was fixed before BERT test scoring and is used for paired comparisons.
-
-**BERT primary − LR: −0.0017, paired CI95% [−0.0184, 0.0182].** This does not establish that either model is better. BERT's higher accuracy comes with weaker SVA F1; aggregate accuracy alone hides that tradeoff.
-
-The BERT extension was performed after classical test results were known, using the same test set. It is an additional comparison, not an independent external evaluation. See [results and limitations](docs/RESULTS.md) and the [full-precision CSVs](results/README.md).
-
-## Engineering and experimental design
-
-- Parse NUCLE SGML and preserve character offsets, annotation identity, and provenance.
-- Keep connected groups of related essays in one partition to reduce leakage from shared content.
-- Fit a categorical/lexical feature encoder on train only; use fixed columns and unknown-value handling for validation/test.
-- Implement sparse multinomial Logistic Regression in PyTorch and a deterministic Gini Decision Tree.
-- Compare structure, lexical, POS, morphology, and dependency features through incremental experiments, masking, and ablations.
-- Fine-tune BERT-small with CLS/span-mean readouts, separate encoder/head learning rates, checkpoint replay checks, and resumable training.
-- Select models using validation; compare saved test predictions with paired bootstrap by connected group.
+The BERT extension reused a test already seen for the classical experiments, so this is not independent external validation. See the [result interpretation](docs/RESULTS.md) and [full-precision aggregate tables](results/README.md) for confidence intervals, class tradeoffs, ablations, and limitations.
 
 ## Quick start
 
-Run from the repository root. The reference research environment used Python **3.13.7**; the declared supported range is in `pyproject.toml`.
+Requires Git and [uv](https://docs.astral.sh/uv/getting-started/installation/). Run from a Git checkout so preparation tests can record a committed HEAD. Initial dependency installation requires network access.
 
 ```bash
+git clone https://github.com/MihQuannn7799/esl-grammar-error-classification.git
+cd esl-grammar-error-classification
 uv sync --locked --python 3.13.7
-uv run --no-sync python -m pytest tests -q
 uv run --no-sync python -m examples.synthetic_demo
+uv run --no-sync python -m pytest tests -q
 ```
 
-The demo uses hand-written examples, the existing spaCy feature extractor, a train-only encoder, and Logistic Regression. It creates no research artifacts and downloads no corpus or BERT checkpoint. Its metrics are demonstration output, not the research results above. The spaCy English package is installed through the base dependency lock.
+The demo uses hand-written examples and the actual feature extractor, train-only encoder, and sparse LR. It needs no NUCLE corpus or task checkpoint, writes no result files, and makes no research-performance claim. The base lock installs spaCy and its English model package.
 
-Portfolio validation: **106 tests passed, 1 skipped** with the optional BERT dependency present; the synthetic demo also ran successfully. Tests used the existing research environment. A fresh dependency installation was not rerun; see [validation details](results/validation.json).
-
-For BERT tests and training, install the optional dependency before rerunning tests:
+For the complete test suite, including tiny randomly initialized BERT models:
 
 ```bash
 uv pip install --python .venv -r requirements-bert.txt
 uv run --no-sync python -m pytest tests -q
+uv run --no-sync python scripts/check_repository.py
 ```
 
-Without `transformers`, BERT-specific tests are skipped. The licensed real-corpus boundary fixture is not distributed, so its test module is skipped. Other tests use synthetic inputs, and BERT tests use tiny locally initialized models/vocabularies without downloading pretrained weights.
+The last local full-suite check was **106 passed, 1 skipped**; the skip requires an undistributed licensed corpus fixture. The live badge reports CI status independently. Tests use synthetic inputs and do not download a BERT checkpoint. See [RUNNING.md](docs/RUNNING.md) for training prerequisites and [validation metadata](results/validation.json) for the exact local verification scope.
 
-For complete instructions, input requirements, and fresh-output commands, see [Running the project](docs/RUNNING.md). The commands above require network access to install dependencies on a new machine. No inference service or pretrained task checkpoint is distributed.
+## What the project demonstrates
 
-## Repository map
+- **Data engineering:** SGML parsing, preserved character offsets/provenance, quality checks, and connected-group splitting to reduce content leakage.
+- **Feature engineering:** train-only sparse encoding of structure, lexical, POS, morphology, and dependency information; Full has 16,180 columns.
+- **Model implementation:** PyTorch sparse multinomial LR with L2/LBFGS and deterministic Gini CART, compared with Majority/POS baselines.
+- **Neural experiments:** CLS versus contextual span-mean BERT-small, separate encoder/head learning rates, early stopping, resumable runs, and locked checkpoint selection.
+- **Evaluation:** Macro-F1, per-class analysis, incremental/masking/ablation experiments, and 1,000 paired group-bootstrap replicates.
+
+BERT-small has two transformer layers, hidden size 128, and two attention heads. Its input is span-marked text, not the classical feature vector. Full LR already includes sentence-wide dependency information; the comparison is not simply context versus no context.
+
+## Repository structure
 
 ```text
-src/
-  data/         SGML parsing, quality checks, preparation, group splitting
-  features/     POS baseline and train-only S/L/P/M/D encoding
-  models/       Sparse LR, Gini Tree, BERT span readout
-  training/     Benchmarks, ablations, selection, BERT train/lock/test
-  evaluation/   Metrics, bootstrap, and experiment diagnostics
-tests/          Synthetic regression and lifecycle tests
-examples/       Corpus-free end-to-end demonstration
-configs/        BERT experiment configuration
-docs/           Architecture, running instructions, result interpretation
-results/        Aggregate CSVs, selected figures, English Markdown reports
+src/          Data preparation, features, models, training, and evaluation
+examples/     Corpus-free end-to-end demonstration
+tests/        Synthetic regression, model, and training-lifecycle tests
+configs/      BERT experiment configuration
+docs/         Architecture, running instructions, and result interpretation
+results/      Aggregate CSVs, figures, and English Markdown reports
+scripts/      Lightweight repository checks
+.github/      Windows/Linux CI workflow
 ```
 
-The former `src/reporting/` package is intentionally absent. Document-export validators that depend on that package are also omitted; ML training, feature extraction, and tests do not import it. The ML source retained from the research project is copied without algorithm changes.
+## Explore the work
 
-## What can be reproduced?
-
-| Available from this repository | Requires independently supplied research inputs |
+| Goal | Start here |
 |---|---|
-| Run synthetic tests and the demonstration | Recreate the NUCLE experiment dataset |
-| Inspect algorithms and selected configurations | Rebuild the historical split using its review inputs |
-| Inspect aggregate metrics, ablations, figures, and final reports | Replay original predictions/checkpoints or historical lock hashes |
-| Train a new experiment after supplying compatible inputs | Reproduce exact research scores in the original environment |
+| Understand the pipeline and feature encoder | [Architecture](docs/ARCHITECTURE.md) |
+| Install, test, or train a new experiment | [Running the project](docs/RUNNING.md) |
+| Interpret scores and confidence intervals | [Results and limitations](docs/RESULTS.md) |
+| Read the complete study | [Final report: 34 tables and 14 references](results/reports/final-report.md) |
+| Inspect the BERT extension | [BERT comparison](results/reports/bert-comparison.md) |
+| Present the findings | [Presentation and speaker notes](results/reports/presentation.md) |
+| Contribute or run project checks | [Contribution guide](CONTRIBUTING.md) |
 
-The repository excludes NUCLE text/corrections, row-level predictions, review packets, encoders/vocabularies, model checkpoints, caches, private work logs, old archives, and report generators. Internal post-prediction audit/review helpers and the one-off historical replay driver are omitted. Shared evaluation routines and data-integrity checks used by the experiments/tests remain; historical test-scoring routines still require private artifacts and are not a fresh-clone quick start. Research-era manifests and source hashes are not regenerated to imply that this curated export is the original locked workspace.
+## Reproducibility and scope
 
-## Documentation
+A fresh checkout supports synthetic tests, the demo, and inspection of saved aggregate results. Full NUCLE reproduction additionally requires independently obtained corpus access, compatible preparation/review inputs, and historical artifacts. Models retain train-fitted weights; validation selects configurations and test is used after locking. Replaying saved predictions is not a new independent evaluation.
 
-- [Architecture and data flow](docs/ARCHITECTURE.md)
-- [Installation, testing, and training](docs/RUNNING.md)
-- [Results, model selection, and limitations](docs/RESULTS.md)
-- [Aggregate files and provenance](results/README.md)
-- [Test scope](tests/README.md)
-- [Final research report, English Markdown](results/reports/final-report.md)
-- [BERT comparison, English Markdown](results/reports/bert-comparison.md)
-- [Presentation and speaker notes, English Markdown](results/reports/presentation.md)
+The repository excludes corpus text/corrections, row-level predictions, private reviews, checkpoints/vocabularies, caches, report generators, and one-off internal audit/replay helpers. Some retained historical scoring routines require those excluded inputs; follow the public run guide rather than executing them blindly. No pretrained task checkpoint or inference service is distributed.
 
-## Attribution and assistance
+## Attribution
 
-This was an academic team project; this portfolio does not infer individual contributions from the module list. AI tools assisted with code, tests, analysis, and documentation; BERT training/testing commands were run by the project user. Technical checks and AI-assisted language audits do not replace independent expert adjudication of annotations.
+An academic team project using NUCLE: Dahlmeier, Ng, and Wu (2013), *Building a Large Annotated Corpus of Learner English: The NUS Corpus of Learner English*. Obtain the dataset separately under its applicable terms.
 
-Dataset reference: Dahlmeier, Ng, and Wu (2013), *Building a Large Annotated Corpus of Learner English: The NUS Corpus of Learner English*, BEA. Obtain NUCLE separately under its applicable terms; it is not included in this repository.
+Individual contributions are not inferred from module ownership. AI tools assisted code, tests, analysis, and documentation; the project user ran BERT training/testing commands. AI-assisted language review does not replace independent expert adjudication. Research limitations and pending review are retained in the reports.

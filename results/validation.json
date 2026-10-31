@@ -1,6 +1,6 @@
 {
   "date": "2026-10-31",
-  "scope": "Public portfolio validation including English Markdown report conversion; no research retraining",
+  "scope": "Professional public portfolio: existing ML suite, corpus-free demo, repository checker, and pinned Windows/Linux CI configuration; no research retraining",
   "environment": {
     "python": "3.13.7",
     "torch": "2.14.0",
@@ -65,6 +65,32 @@
     "all_report_prose_english": true,
     "no_pdf_docx_pptx_files": true,
     "checks": "Table-by-table numeric preservation, public aggregate CSV agreement, Markdown links, and unchanged Python/research-result hashes",
-    "pytest_scope": "Earlier 106-pass/1-skip run retained; Python code/tests and dependency files unchanged by report conversion"
+    "pytest_scope": "Full 106-pass/1-skip suite rerun after portfolio polish; report tables and all existing ML source/dependencies unchanged"
+  },
+  "professionalization": {
+    "repository_checker": {
+      "files": 87,
+      "python_modules": 53,
+      "local_markdown_links": 93,
+      "aggregate_csvs": 7,
+      "negative_cases": "Broken links, excluded artifacts, row-level CSV fields, unresolved local imports all rejected"
+    },
+    "ci": {
+      "workflow": ".github/workflows/ci.yml",
+      "operating_systems": [
+        "ubuntu-latest",
+        "windows-latest"
+      ],
+      "python": "3.13.7",
+      "uv": "0.9.18",
+      "permissions": "contents:read",
+      "actions_pinned_to_commit_shas": true,
+      "remote_execution": "Consult the live workflow; YAML was parsed and local test/demo/checker commands passed before publication"
+    },
+    "retained_ml_source_and_research_results_unchanged": true,
+    "guides": [
+      "CONTRIBUTING.md",
+      "docs/README.md"
+    ]
   }
 }

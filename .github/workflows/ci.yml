@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests and demo (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      PYTHONUTF8: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      UV_NO_PROGRESS: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.9.18"
+          python-version: "3.13.7"
+          enable-cache: true
+      - name: Install locked base dependencies
+        run: uv sync --locked --python 3.13.7
+      - name: Install optional BERT dependency
+        run: uv pip install --python .venv -r requirements-bert.txt
+      - name: Check public repository structure
+        run: uv run --no-sync python scripts/check_repository.py
+      - name: Run synthetic test suite
+        run: uv run --no-sync python -m pytest tests -q -ra
+      - name: Run corpus-free demonstration
+        run: uv run --no-sync python -m examples.synthetic_demo

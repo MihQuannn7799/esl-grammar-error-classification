@@ -1,6 +1,6 @@
 # Running the project
 
-All commands run from the repository root. `uv run --no-sync` uses the environment prepared by the installation step without removing optional packages installed afterward.
+All commands run from a Git checkout at the repository root. Start with `git clone https://github.com/MihQuannn7799/esl-grammar-error-classification.git` and `cd esl-grammar-error-classification`. `uv run --no-sync` uses the environment prepared by the installation step without removing optional packages installed afterward.
 
 ## 1. Install the environment
 
@@ -132,3 +132,11 @@ Choose configurations/checkpoints with validation, then freeze before test. The 
 Paired bootstrap must use the same resampled connected groups for all models. Seed standard deviation and group-bootstrap CI answer different questions and should be reported separately. Aggregate CSVs are sufficient to inspect the published outcome, but recomputing its paired bootstrap requires the excluded row-level predictions and group metadata.
 
 Historical functions such as `verify_lock` check the original source/artifact snapshot. This curated export omits reporting modules and private inputs and therefore cannot satisfy that historical lock. The historical evaluator also has fixed output paths; do not run it blindly or edit stored hashes to bypass guards. A source checkout and passing synthetic tests do not imply full raw-to-test reproduction.
+
+## 8. Automated project checks
+
+```bash
+uv run --no-sync python scripts/check_repository.py
+```
+
+The standard-library-only checker inspects Git-tracked and non-ignored candidate files for broken local Markdown links, excluded research artifacts, row-level aggregate CSV fields, Python syntax, and unresolved local `src` imports. It writes nothing. The [CI workflow](../.github/workflows/ci.yml) installs the locked base environment and optional BERT dependency, then runs this checker, the synthetic suite, and demo on Windows and Linux. CI does not download NUCLE or pretrained task weights, rerun the research benchmark, or adjudicate labels.
