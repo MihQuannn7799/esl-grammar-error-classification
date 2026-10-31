@@ -42,3 +42,8 @@ dist/
 /src/evaluation/review_saved_evidence.py
 /src/evaluation/verify_final_results.py
 /src/evaluation/reproduce_evaluation_pipeline.py
+
+# Public reports are maintained as English Markdown.
+/results/reports/*.pdf
+/results/reports/*.docx
+/results/reports/*.pptx

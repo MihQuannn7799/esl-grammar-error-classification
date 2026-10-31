@@ -1,6 +1,6 @@
 {
   "date": "2026-10-31",
-  "scope": "Curated public portfolio after dependency-safe removal of internal review/replay helpers; not historical research lock",
+  "scope": "Curated portfolio with English Markdown research reports; not historical research lock",
   "excluded": [
     "src/reporting",
     "document-export validators",
@@ -13,14 +13,14 @@
   ],
   "files": {
     ".gitattributes": {
-      "sha256": "97ac9c5e9190246e2871730203ab4eef9bc9513392553b52564be5682d721c68",
-      "git_blob_sha": "c0177abcd6c14dd7928511d10667e8d882d07ef8",
-      "bytes": 128
+      "sha256": "4f92cce7acdf5b7ce07291bc24609206ef1b201ac262f039fb8b574acc104091",
+      "git_blob_sha": "2177f8fb60ae2eefb88095dff0ab3df41867f75e",
+      "bytes": 122
     },
     ".gitignore": {
-      "sha256": "832590a13b3bd6b9564c560190eb58d0da47d3b8b41381fef1f4e12a443d04bb",
-      "git_blob_sha": "54adbcc5443a1f7b5978e07b5bb54284e67e9905",
-      "bytes": 806
+      "sha256": "b9731fc41d8bca3140eac17bef6c319a1fe0f954c323e120c6b6c03dd0e1428a",
+      "git_blob_sha": "46d2a841b82c924714659ea7aa9b28064723c9fb",
+      "bytes": 936
     },
     ".python-version": {
       "sha256": "02e735b3dfe1c32833eb550b7ff8ffa17f5f2bc3fa1e7bae61a8f5a3883ce398",
@@ -68,9 +68,9 @@
       "bytes": 42
     },
     "README.md": {
-      "sha256": "6c870a9cbf99f4b58a6dd8554437b52816bc463a2710433417cbfb3e8b31e5a6",
-      "git_blob_sha": "9b7001d4e1e1f16a200911d731c7e979ebff8da4",
-      "bytes": 8550
+      "sha256": "8149968ef425b35c070e7e6d1faf8d1ff39671e244d2621346777548554b21d8",
+      "git_blob_sha": "a1449675d0c95e143b29f00a4d915051d7bd2518",
+      "bytes": 8562
     },
     "requirements-bert.txt": {
       "sha256": "9ba67040194879e1a7aa13f8845918dc1a50af7f51fb860a51899d22769b2fb2",
@@ -123,24 +123,24 @@
       "bytes": 1781
     },
     "results/README.md": {
-      "sha256": "70952f205d8bf4cc37623d6d7fd005e5bd0d4bd54cb578d4f9439fad135bbfb1",
-      "git_blob_sha": "779ecb67365dfb8c7614bcc1ee27914896716a20",
-      "bytes": 2988
+      "sha256": "a3a0113790adfa4f7b0d655fa5092c8cd86b10f4164b61cd0d864aeb214a3fe6",
+      "git_blob_sha": "940652da93c6e260ca953fed0a02b7c1ab3901cf",
+      "bytes": 3282
     },
-    "results/reports/bao_cao_tong_ket_NUCLE.pdf": {
-      "sha256": "86a971a9edeea5376cbc6d8ef7bd919fb792cfaa54a24dff60ccf095919acd99",
-      "git_blob_sha": "b08770a849981d9eaa22b58ff5d59fd3ab394b4a",
-      "bytes": 853319
+    "results/reports/bert-comparison.md": {
+      "sha256": "a91c90400c3eb6b9a51011baba172b76d7ad6e6dbb8ae4a6033a757ec36d9177",
+      "git_blob_sha": "87cbd3958a0befcb7c9bf9da851f4dd7493b8d38",
+      "bytes": 6235
     },
-    "results/reports/BERT_comparison_report.pdf": {
-      "sha256": "a069b7ffd093fc704e568d9dddf614d24a7208c34f750790d18e027edc79cac4",
-      "git_blob_sha": "4eb7d1ed8f357e784d2733eccaec5c0fa8629a22",
-      "bytes": 160028
+    "results/reports/final-report.md": {
+      "sha256": "08075a01fffaf047a760da87ab72ffa8b821250f1117480fdd920ccd1a2be30f",
+      "git_blob_sha": "cc8192ac2b475c08ec61c8a0fa4732666395cc4f",
+      "bytes": 55021
     },
-    "results/reports/NUCLE_presentation.pdf": {
-      "sha256": "da21715742e8a598b5957408863e416f9c1b95bd147c0c3935a8a9d2fe697487",
-      "git_blob_sha": "775c7e25db8432137eceaa0451bef90a3c2385f8",
-      "bytes": 223393
+    "results/reports/presentation.md": {
+      "sha256": "8b21dfd05ea4adad027715ebc44192d3975dc7e233c47290bc09c1e31b0aafb8",
+      "git_blob_sha": "2cab6daa36b560e09edc42f1d93b3851f3a9e335",
+      "bytes": 8661
     },
     "results/seed_results.csv": {
       "sha256": "ec758cc86d26f6aab90c43ff0f117cc6d51ede73ed7b2c3ac10a13b957cf14aa",
@@ -148,9 +148,9 @@
       "bytes": 420
     },
     "results/validation.json": {
-      "sha256": "c724333dc7141721803722be51a53b17a7b55e89af9ca34ee2067073f61b3dde",
-      "git_blob_sha": "9119db200aac0e7eb1872f44f16e382e8b245712",
-      "bytes": 2023
+      "sha256": "5022e12b2eff4d0b2970a156a8ad188aa94dc381ffa86bc3d498486238276b9c",
+      "git_blob_sha": "d6539bc86d9d3981533722a935e0d170376bb2f5",
+      "bytes": 2800
     },
     "results/validation_grid.csv": {
       "sha256": "980a17dc0fdb1eee0c8f669eed51de1403852c6c603988f04d0079f9fed28831",

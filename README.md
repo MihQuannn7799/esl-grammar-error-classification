@@ -94,7 +94,7 @@ tests/          Synthetic regression and lifecycle tests
 examples/       Corpus-free end-to-end demonstration
 configs/        BERT experiment configuration
 docs/           Architecture, running instructions, result interpretation
-results/        Aggregate CSVs, selected figures, final PDFs
+results/        Aggregate CSVs, selected figures, English Markdown reports
 ```
 
 The former `src/reporting/` package is intentionally absent. Document-export validators that depend on that package are also omitted; ML training, feature extraction, and tests do not import it. The ML source retained from the research project is copied without algorithm changes.
@@ -117,9 +117,9 @@ The repository excludes NUCLE text/corrections, row-level predictions, review pa
 - [Results, model selection, and limitations](docs/RESULTS.md)
 - [Aggregate files and provenance](results/README.md)
 - [Test scope](tests/README.md)
-- [Final research report, Vietnamese PDF](results/reports/bao_cao_tong_ket_NUCLE.pdf)
-- [BERT comparison, Vietnamese PDF](results/reports/BERT_comparison_report.pdf)
-- [Presentation, Vietnamese PDF](results/reports/NUCLE_presentation.pdf)
+- [Final research report, English Markdown](results/reports/final-report.md)
+- [BERT comparison, English Markdown](results/reports/bert-comparison.md)
+- [Presentation and speaker notes, English Markdown](results/reports/presentation.md)
 
 ## Attribution and assistance
 

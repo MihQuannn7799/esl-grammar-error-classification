@@ -1,6 +1,6 @@
 # Published aggregate results
 
-These files were copied from the completed research artifacts for portfolio review. CSV values and selected figures/PDFs retain their original saved contents; no research model was retrained during export.
+These files were copied from the completed research artifacts for portfolio review. CSV values and selected figures retain their original saved contents; no research model was retrained during export.
 
 | File | Contents | Research source |
 |---|---|---|
@@ -21,13 +21,13 @@ The classical ablation table contains Full-minus-D aliases of S+L+P+M; names do 
 - [Primary BERT learning curve](figures/primary_learning_curve.png)
 - [Paired differences](figures/paired_differences.png)
 
-## Final research PDFs
+## English Markdown reports
 
-- [Final project report, Vietnamese](reports/bao_cao_tong_ket_NUCLE.pdf)
-- [BERT comparison, Vietnamese](reports/BERT_comparison_report.pdf)
-- [Presentation, Vietnamese](reports/NUCLE_presentation.pdf)
+- [Final project report](reports/final-report.md): translated research narrative, all 34 original tables, 14 references, and selected figures.
+- [BERT comparison](reports/bert-comparison.md): the extended experiment, both original quantitative tables, two figures, and interpretation limits.
+- [Presentation and speaker notes](reports/presentation.md): all 12 presentation sections in English, including translated speaker notes.
 
-These PDFs retain their research-era content and may mention private artifact paths or reporting modules absent from this export. For commands available in this repository, follow [RUNNING.md](../docs/RUNNING.md), not historical PDF paths. The English [results guide](../docs/RESULTS.md) summarizes the current interpretation and limitations.
+These replace the three Vietnamese PDFs in the current repository tree. Numerical results and conclusions are unchanged; links and code-scope notes are adapted to the curated public export. Historical evidence not included here is described as such. For runnable commands, use [RUNNING.md](../docs/RUNNING.md). The shorter [results guide](../docs/RESULTS.md) remains available alongside the complete reports.
 
 No CSV here contains per-sample inputs/predictions, essay text, correction text, or private review notes. New experiment outputs belong under the ignored `reports/` tree, not in this saved aggregate snapshot.
 
