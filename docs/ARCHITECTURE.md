@@ -10,7 +10,7 @@ Gold labels supervise training and scoring. Corrections, sample/essay IDs, group
 
 1. Parse SGML documents and annotations with [nucle_sgml.py](../src/data/nucle_sgml.py).
 2. Audit offsets, missing fields, overlaps, duplicates, and source/CSV agreement.
-3. Construct sentences and annotation-local offsets with [prepare_nucle.py](../src/data/prepare_nucle.py). Version 2 uses fixed text-only sentence-boundary rules.
+3. Construct sentences and annotation-local offsets with [prepare_nucle.py](../src/data/prepare_nucle.py). Version 2 uses fixed text-only sentence-boundary rules. The public runner validates the source, annotation CSV, and quality audit without a private overlap-review log. It does not add overlap-review statuses to prepared records; new manifests use schema version 3.
 4. Connect related essays using duplicate content and exact model-input evidence, then split connected groups with [group_split_nucle.py](../src/data/group_split_nucle.py).
 
 The research split seed was `20261013`: 11,052 train, 2,368 validation, and 2,368 test annotations. There are 1,045/99/97 groups with target samples in those partitions. The corpus contains 15,788 target annotations in 11,272 distinct prepared sentences. Semantic near-duplicate detection was not exhaustive.

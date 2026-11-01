@@ -106,7 +106,7 @@ def compare(old=V1_OUTPUT, new=DEFAULT_OUTPUT, output=DEFAULT_REPORT, source=SGM
         paragraph = docs[record["essay_index"]].paragraphs[record["start_par"]]
         check_alignment(sample, v2["sentences"][sample["sentence_id"]], record, paragraph)
     diffs, changed, retention = [], set(), []
-    unchanged_fields = ("essay_id", "essay_index", "mistake_index", "start_par", "start_off", "end_par", "end_off", "original_label", "quality_flags", "review_status")
+    unchanged_fields = ("essay_id", "essay_index", "mistake_index", "start_par", "start_off", "end_par", "end_off", "original_label", "quality_flags")
     for aid in sorted(v1["provenance"]):
         p1, p2 = v1["provenance"][aid], v2["provenance"][aid]
         require(all(p1[k] == p2[k] for k in unchanged_fields), f"Source metadata changed for {aid}")

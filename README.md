@@ -82,7 +82,7 @@ results/      Aggregate CSVs, figures, and English Markdown reports
 
 ## Reproducibility and scope
 
-A fresh checkout supports synthetic tests, the demo, and inspection of saved aggregate results. Full NUCLE reproduction additionally requires independently obtained corpus access, compatible preparation/review inputs, and historical artifacts. Models retain train-fitted weights; validation selects configurations and test is used after locking. Replaying saved predictions is not a new independent evaluation.
+A fresh checkout supports synthetic tests, the demo, and inspection of saved aggregate results. New NUCLE preparation requires independently obtained corpus access and matching annotation/quality artifacts; it does not require a private overlap-review log. Exact historical evaluation additionally needs the original research artifacts and locks. Models retain train-fitted weights; validation selects configurations and test is used after locking. Replaying saved predictions is not a new independent evaluation.
 
 The repository excludes corpus text/corrections, row-level predictions, private reviews, checkpoints/vocabularies, caches, report generators, and one-off internal audit/replay helpers. Some retained historical scoring routines require those excluded inputs; follow the public run guide rather than executing them blindly. No pretrained task checkpoint or inference service is distributed.
 

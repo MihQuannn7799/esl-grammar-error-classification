@@ -66,7 +66,7 @@ def test_build_dataset_keeps_and_flags_both_challenge_samples(nlp):
     frame = pd.DataFrame(rows)
     ids = {row["annotation_id"] for row in rows}
     built = build_dataset([NucleDocument("challenge-fixture", paragraphs)], frame,
-                          {aid: [] for aid in ids}, {}, "fixture-source", nlp)
+                          {aid: [] for aid in ids}, "fixture-source", nlp)
 
     assert {row["annotation_id"] for row in built["samples"]} == ids
     assert {row["annotation_id"] for row in built["boundary_challenges"]} == ids

@@ -51,14 +51,13 @@ The demo uses hand-written known-span examples, the actual S/L/P/M/D feature ext
 
 ## 4. Research data requirements
 
-Obtain NUCLE independently under its applicable access terms. This repository does not supply corpus text, corrections, prepared examples, per-sample predictions, vocabularies, or task checkpoints. Preparation additionally requires compatible quality evidence and a genuine overlap-review log; the quality script does not create the required human decisions.
+Obtain NUCLE independently under its applicable access terms. This repository does not supply corpus text, corrections, prepared examples, per-sample predictions, vocabularies, or task checkpoints. Preparation requires matching annotation and quality artifacts generated from the source. It does not read an overlap-review log or add overlap-review statuses to prepared records.
 
 The canonical local paths used by the commands in this guide are:
 
 ```text
 data_set/raw/nucle3.2.sgml
 data_set/interim/nucle_errors.csv
-data_set/interim/nucle_overlap_review_log_all.csv
 data_set/processed/nucle_preparation_v2/
 data_set/split/nucle_group_split/
 data_set/features/nucle_features_v1/
@@ -71,11 +70,11 @@ reports/nucle_feature_ablation_v1/
 
 The feature artifact name ends in v1 although its input uses preparation v2. These local paths are ignored by Git; published aggregates live separately in results/.
 
-Follow the commands in [B](#b-data-preparation-scripts): download or restore the source, run understanding and quality checks, provide compatible review inputs, prepare v2 samples, then split connected groups. The optional v1/v2 comparison is documented there too.
+Follow the commands in [B](#b-data-preparation-scripts): download or restore the source, run understanding and quality checks, prepare v2 samples, then split connected groups. The optional v1/v2 comparison is documented there too.
 
 Use a fresh experiment checkout for the canonical sequence. Stages that reject existing outputs require a new directory or checkout. If you choose custom output paths, update every dependent argument/configuration; historical scripts with fixed paths will not discover outputs named pos_new, benchmark_new, or ablation_new automatically. Preserve earlier results rather than overwriting them.
 
-Historical preparation expects a specific source checksum and verified audit/review inputs. Filenames do not establish the release. A different source, review log, or code revision constitutes a new experiment, not an exact historical replay.
+Preparation expects a specific source checksum and matching annotation/audit inputs. Filenames do not establish the release. New manifests use schema version 3, without the old review-log input or overlap-review status fields. Source, annotation, audit, code, and output hashes are still recorded. Historical manifests and locks are not interchangeable with these new outputs; a different source or code revision constitutes a new experiment, not an exact historical replay.
 
 ## 5. Train classical baselines and models
 
@@ -170,13 +169,13 @@ The sections are expanded below. In particular, `src/data/nucle_sgml.py`, `parse
 | Level | Required local inputs | What becomes available |
 |---|---|---|
 | A: public checkout | Git checkout, base dependencies; optional `transformers` for BERT tests | Demo, synthetic tests, library imports, reading reports/results |
-| B: authorized research data | NUCLE SGML plus matching annotation CSV, quality audit, overlap-review decisions, source checksum, and a committed HEAD | Preparation and connected-group split |
+| B: authorized research data | NUCLE SGML plus matching annotation CSV, quality audit, source checksum, and a committed HEAD | Preparation and connected-group split |
 | C: prepared experiment | Level B outputs; train-only features/encoder for classical models; local pretrained model metadata/files for BERT | Validation training, ablations, locked BERT selection/test |
 | H: historical reproduction | Original protocol documents, compatible phase-specific summaries, predictions, checkpoints, manifests, and locks | Fixed-path sensitivity/diagnostic/replay scripts below |
 
 Normal order is **download/restore data -> understanding -> quality review -> preparation -> group split -> features/baselines -> validation training -> lock -> test -> analysis**. Preparation v1 and v2 comparison is optional. The extended BERT runner is the recommended BERT workflow; the five-epoch CLS runner is retained for the historical experiment.
 
-The exact historical review inputs, protocols, row-level predictions, and task checkpoints are not distributed. In particular, `docs/bert_experiment_protocol.md`, `docs/bert_learning_diagnostics_protocol.md`, and `docs/final_evaluation_protocol.md` are required by specific historical scripts but absent from this curated export. Restore genuine inputs in a separate complete research checkout for those stages; do not create empty placeholders or change recorded hashes to bypass checks. Follow [RUNNING.md](RUNNING.md) to prepare a local pretrained `model_source.json` for the current BERT runner.
+The exact historical review inputs, protocols, row-level predictions, and task checkpoints are not distributed. The normal preparation command does not need them; the optional comparison and historical evaluation tools below have separate requirements. In particular, `docs/bert_experiment_protocol.md`, `docs/bert_learning_diagnostics_protocol.md`, and `docs/final_evaluation_protocol.md` are required by specific historical scripts but absent from this curated export. Restore genuine inputs in a separate complete research checkout for those stages; do not create empty placeholders or change recorded hashes to bypass checks. Follow [RUNNING.md](RUNNING.md) to prepare a local pretrained `model_source.json` for the current BERT runner.
 
 Use fresh output directories where the implementation requires them. Some fixed-path diagnostics write into `reports/`; do not batch-execute every `.py`. **Do not pass `--help` to scripts without argparse:** `nucle_final_selection.py --help` would start its fitting branch, and the downloader does not interpret a help flag.
 
@@ -212,17 +211,17 @@ Options: `--input`, `--csv`, `--report`. Reads SGML and exports the annotation C
 uv run --no-sync python -m src.data.data_quality --input data_set/raw/nucle3.2.sgml --csv data_set/interim/nucle_errors.csv --output-dir reports --report reports/data_quality.md --release unverified
 ```
 
-Options: `--input`, `--csv`, `--output-dir`, `--report`, `--release`. Compares source/CSV and writes `nucle_data_quality.json`, `nucle_annotation_audit.csv`, `nucle_duplicate_content.json`, and the requested Markdown report. Use a verified release identifier when available; the example does not infer a release from the filename. This generates audit evidence, not the human review log required by preparation. Reusing output paths can replace files.
+Options: `--input`, `--csv`, `--output-dir`, `--report`, `--release`. Compares source/CSV and writes `nucle_data_quality.json`, `nucle_annotation_audit.csv`, `nucle_duplicate_content.json`, and the requested Markdown report. Use a verified release identifier when available; the example does not infer a release from the filename. The audit CSV is the quality-evidence input used by preparation; no separate overlap-review log is needed. Reusing output paths can replace files.
 
 #### `src/data/prepare_nucle.py`
 
 ```bash
-uv run --no-sync python -m src.data.prepare_nucle --source data_set/raw/nucle3.2.sgml --annotations data_set/interim/nucle_errors.csv --audit reports/nucle_annotation_audit.csv --review data_set/interim/nucle_overlap_review_log_all.csv --policy v2 --output data_set/processed/nucle_preparation_v2
+uv run --no-sync python -m src.data.prepare_nucle --source data_set/raw/nucle3.2.sgml --annotations data_set/interim/nucle_errors.csv --audit reports/nucle_annotation_audit.csv --policy v2 --output data_set/processed/nucle_preparation_v2
 ```
 
-Options: `--source`, `--annotations`, `--audit`, `--review`, `--output`, `--expected-source-sha256`, `--policy {v1,v2}`. The default expected checksum is the verified historical source checksum. Requires matching review decisions and spaCy 3.8.7; preserves original offsets and rejects incompatible inputs. Creates sample/sentence/provenance JSONL, quality/boundary outputs, summary and hashed manifest in a new directory. It records `git rev-parse HEAD`; it does not split data or train a model.
+Options: `--source`, `--annotations`, `--audit`, `--output`, `--expected-source-sha256`, `--policy {v1,v2}`. The default expected checksum is the verified historical source checksum. Requires matching annotation/quality artifacts and spaCy 3.8.7; preserves original offsets and rejects incompatible inputs. No review CSV or `--review` argument is used, and no overlap `review_status` is written to provenance or summary. Creates sample/sentence/provenance JSONL, quality/boundary outputs, summary and hashed manifest in a new directory. It records `git rev-parse HEAD`; it does not split data or train a model.
 
-To build the older policy separately, use the same input arguments and `--policy v1 --output data_set/processed/nucle_preparation_v1`. A different legitimate source requires its own verified checksum and compatible review inputs, not reuse of another dataset's review log.
+To build the older policy separately, use the same input arguments and `--policy v1 --output data_set/processed/nucle_preparation_v1`. A different legitimate source requires its own verified checksum and annotation/audit files generated from that source.
 
 #### `src/data/compare_preparation.py`
 
@@ -531,7 +530,7 @@ Use pytest, not `python tests/test_*.py`: these modules define tests but have no
 | [tests/test_final_evaluation.py](../tests/test_final_evaluation.py) | `uv run --no-sync python -m pytest tests/test_final_evaluation.py -q` | Fixed-label metrics, whole-group resampling, encoder serialization, feature removal, locks. |
 | [tests/test_nucle_benchmark.py](../tests/test_nucle_benchmark.py) | `uv run --no-sync python -m pytest tests/test_nucle_benchmark.py -q` | Sparse tree, metrics, train/validation loader isolation, benchmark timing. |
 | [tests/test_nucle_features.py](../tests/test_nucle_features.py) | `uv run --no-sync python -m pytest tests/test_nucle_features.py -q` | Synthetic extraction, train-only vocabulary, leakage rejection, offset mismatch. |
-| [tests/test_nucle_preparation.py](../tests/test_nucle_preparation.py) | `uv run --no-sync python -m pytest tests/test_nucle_preparation.py -q` | Synthetic preparation, boundaries, offsets/review provenance and no-overwrite; requires committed Git HEAD. |
+| [tests/test_nucle_preparation.py](../tests/test_nucle_preparation.py) | `uv run --no-sync python -m pytest tests/test_nucle_preparation.py -q` | Synthetic preparation without a review log, CLI/API use, v1/v2 comparison, source/audit validation and no-overwrite; requires committed Git HEAD. |
 | [tests/test_nucle_quality.py](../tests/test_nucle_quality.py) | `uv run --no-sync python -m pytest tests/test_nucle_quality.py -q` | Synthetic quality flags, overlaps, duplicate detection and source/CSV agreement. |
 | [tests/test_nucle_understanding.py](../tests/test_nucle_understanding.py) | `uv run --no-sync python -m pytest tests/test_nucle_understanding.py -q` | Synthetic SGML parsing, missing corrections, span checks and canonical paths. |
 | [tests/test_preparation_alignment.py](../tests/test_preparation_alignment.py) | `uv run --no-sync python -m pytest tests/test_preparation_alignment.py -q` | Synthetic v1/v2 token alignment and partial-token flags. |

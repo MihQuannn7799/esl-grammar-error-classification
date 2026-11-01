@@ -1,5 +1,7 @@
-"""Boundary, leakage, source identity and publication checks for preparation v1."""
+"""Boundary, leakage, source identity and publication checks for preparation."""
 import json
+import subprocess
+import sys
 
 import pytest
 
@@ -8,7 +10,7 @@ from src.data.parse_nucle import documents_to_dataframe
 from src.data.data_quality import annotation_review
 from src.data.prepare_nucle import (
     build_dataset, canonical, construct_input, digest, export_dataset, file_hash,
-    make_nlp, prepare, read_metadata, segment_paragraph,
+    make_nlp, prepare, read_quality_flags, segment_paragraph,
 )
 
 
@@ -91,7 +93,7 @@ def test_sentence_conversion_and_insertion_ties(nlp):
 def dataset_for(nlp, docs):
     frame = documents_to_dataframe(docs)
     flags = {int(aid): [] for aid in frame.annotation_id}
-    return build_dataset(docs, frame, flags, {0: "unresolved"}, "fixture", nlp)
+    return build_dataset(docs, frame, flags, "fixture", nlp)
 
 
 def test_reason_priority_and_full_accounting(nlp):
@@ -113,7 +115,7 @@ def test_reason_priority_and_full_accounting(nlp):
     assert data["samples"][0]["annotation_id"] == 7
 
 
-def test_overlap_unresolved_ambiguity_and_no_correction_leakage(nlp):
+def test_overlap_ambiguity_and_no_correction_leakage(nlp):
     docs = [NucleDocument("x", ["Dogs run."], [
         NucleMistake(0, 0, 0, 4, "Nn", "Dog", "comment"),
         NucleMistake(0, 0, 0, 4, "SVA", "changed"),
@@ -121,7 +123,8 @@ def test_overlap_unresolved_ambiguity_and_no_correction_leakage(nlp):
     ])]
     original = dataset_for(nlp, docs)
     assert len(original["samples"]) == 3
-    assert original["provenance"][0]["review_status"] == "unresolved"
+    assert all("review_status" not in row for row in original["provenance"])
+    assert "review_status" not in original["summary"]
     assert original["summary"]["input_duplicates"]["ambiguous_groups"] == 1
     docs[0].mistakes[0].correction = "entirely different answer"
     docs[0].mistakes[0].comment = "secret"
@@ -139,46 +142,47 @@ def make_source_artifacts(tmp_path):
                       '<TYPE>Nn</TYPE><CORRECTION>Dog</CORRECTION></MISTAKE>'
                       '</ANNOTATION></DOC>', encoding="utf-8")
     frame = documents_to_dataframe(load_nucle(source))
-    annotations, audit, review = [tmp_path / f"{name}.csv" for name in ("annotations", "audit", "review")]
+    annotations, audit = [tmp_path / f"{name}.csv" for name in ("annotations", "audit")]
     frame.to_csv(annotations, index=False)
     annotation_review(frame)[0].to_csv(audit, index=False)
-    review.write_text("annotation_id,essay_id,error_type,source_sha256,decision,data_action\n"
-                      f"0,x,Nn,{file_hash(source)},unresolved,keep_original_annotation_unchanged\n", encoding="utf-8")
-    return source, annotations, audit, review, frame
+    return source, annotations, audit, frame
 
 
-def test_metadata_rejects_stale_audit_and_foreign_review(tmp_path):
-    source, _, audit, review, frame = make_source_artifacts(tmp_path)
-    assert read_metadata(frame, audit, review, file_hash(source))[1] == {0: "unresolved"}
-    review.write_text(review.read_text().replace(file_hash(source), "wrong"))
-    with pytest.raises(ValueError, match="checksum"):
-        read_metadata(frame, audit, review, file_hash(source))
+def test_quality_flags_reject_stale_audit(tmp_path):
+    _, _, audit, frame = make_source_artifacts(tmp_path)
+    assert read_quality_flags(frame, audit) == {0: []}
     audit.write_text(audit.read_text().replace("Nn", "Prep"))
     with pytest.raises(ValueError, match="Audit CSV"):
-        read_metadata(frame, audit, review, file_hash(source))
+        read_quality_flags(frame, audit)
 
 
-def test_complete_run_reproducibility_and_no_overwrite(tmp_path):
-    source, annotations, audit, review, _ = make_source_artifacts(tmp_path)
+@pytest.mark.parametrize("policy", ["nucle-preparation-v1", "nucle-preparation-v2"])
+def test_complete_run_reproducibility_and_no_overwrite(tmp_path, policy):
+    source, annotations, audit, _ = make_source_artifacts(tmp_path)
     first, second = tmp_path / "first", tmp_path / "second"
     for output in (first, second):
-        prepare(source, annotations, audit, review, output, file_hash(source))
+        prepare(source, annotations, audit, output=output, expected_source_sha256=file_hash(source), policy=policy)
     a = json.loads((first / "manifest.json").read_text(encoding="utf-8"))
     b = json.loads((second / "manifest.json").read_text(encoding="utf-8"))
     assert a["outputs"] == b["outputs"]
+    assert a["schema_version"] == 3
+    assert set(a["inputs"]) == {"source", "annotations", "audit", "environment_lock"}
+    assert all("review_status" not in json.loads(line)
+               for line in (first / "provenance.jsonl").read_text().splitlines())
+    assert "review_status" not in json.loads((first / "summary.json").read_text())
     assert (first / "manifest.sha256").read_text().strip() == digest(canonical(a).encode())
     for name, expected in a["outputs"].items():
         assert file_hash(first / name) == expected
     before = file_hash(first / "samples.jsonl")
     with pytest.raises(ValueError, match="already exists"):
-        prepare(source, annotations, audit, review, first, file_hash(source))
+        prepare(source, annotations, audit, output=first, expected_source_sha256=file_hash(source), policy=policy)
     assert file_hash(first / "samples.jsonl") == before
     with pytest.raises(ValueError, match="Source checksum"):
-        prepare(source, annotations, audit, review, tmp_path / "bad", "wrong")
+        prepare(source, annotations, audit, output=tmp_path / "bad", expected_source_sha256="wrong", policy=policy)
     assert not (tmp_path / "bad").exists()
     annotations.write_text(annotations.read_text().replace("Dogs run.", "Cats run."))
     with pytest.raises(ValueError, match="Understanding CSV"):
-        prepare(source, annotations, audit, review, tmp_path / "bad", file_hash(source))
+        prepare(source, annotations, audit, output=tmp_path / "bad", expected_source_sha256=file_hash(source), policy=policy)
 
 
 def test_changed_input_prevents_publication(tmp_path):
@@ -188,3 +192,44 @@ def test_changed_input_prevents_publication(tmp_path):
     with pytest.raises(ValueError, match="Input changed"):
         export_dataset(output, {"samples": [], "summary": {}}, {}, {source: "old-hash"})
     assert not output.exists()
+
+
+def test_cli_preparation_runs_without_review_log(tmp_path):
+    source, annotations, audit, _ = make_source_artifacts(tmp_path)
+    output = tmp_path / "cli_prepared"
+    result = subprocess.run(
+        [sys.executable, "-m", "src.data.prepare_nucle",
+         "--source", str(source), "--annotations", str(annotations),
+         "--audit", str(audit), "--output", str(output),
+         "--expected-source-sha256", file_hash(source)],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    rows = [json.loads(line) for line in (output / "samples.jsonl").read_text().splitlines()]
+    assert [(row["sentence"], row["error_span"], row["error_type"]) for row in rows] == [
+        ("Dogs run.", "Dogs", "Nn")]
+    assert "review" not in json.loads((output / "manifest.json").read_text())["inputs"]
+
+
+def test_compare_preparations_without_overlap_review_metadata(tmp_path, monkeypatch):
+    from src.data import compare_preparation
+
+    source, annotations, audit, _ = make_source_artifacts(tmp_path)
+    outputs = [tmp_path / "v1", tmp_path / "v2"]
+    for output, policy in zip(outputs, ["nucle-preparation-v1", "nucle-preparation-v2"]):
+        prepare(source, annotations, audit, output=output,
+                expected_source_sha256=file_hash(source), policy=policy)
+    # This optional historical comparison has its own boundary-decision input.
+    interim = tmp_path / "interim"
+    interim.mkdir()
+    (interim / "nucle_boundary_decisions.jsonl").write_text(
+        json.dumps({"annotation_id": 0, "boundary": "keep", "issue_type": "synthetic"}) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(compare_preparation, "DATA_ROOT", tmp_path)
+    summary = compare_preparation.compare(
+        old=outputs[0], new=outputs[1], output=tmp_path / "comparison", source=source,
+    )
+    assert summary["mechanical_checked"] == 1
+    assert summary["input_changed"] == 0
+    assert summary["source_metadata_unchanged"]

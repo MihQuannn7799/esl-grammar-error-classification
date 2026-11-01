@@ -16,7 +16,7 @@ def test_comparison_alignment_checks_token_assignment_and_partial_flags(tmp_path
                       '<TYPE>Nn</TYPE><CORRECTION></CORRECTION></MISTAKE></ANNOTATION></DOC>', encoding="utf-8")
     docs = load_nucle(source)
     frame = documents_to_dataframe(docs)
-    data = build_dataset(docs, frame, {0: []}, {}, file_hash(source), make_nlp())
+    data = build_dataset(docs, frame, {0: []}, file_hash(source), make_nlp())
     sample, sentence, record = data["samples"][0], data["sentences"][0], data["provenance"][0]
 
     check_alignment(sample, sentence, record, "Dogs run.")

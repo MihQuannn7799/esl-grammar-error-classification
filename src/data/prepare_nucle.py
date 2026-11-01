@@ -1,7 +1,8 @@
 """Build known-span samples without correction features or dataset splitting.
 
-Run: python src/data/prepare_nucle.py
-Policy: docs/preparation.md (v2 by default; --policy v1 reproduces old boundaries).
+Run: python -m src.data.prepare_nucle
+Usage: docs/RUNNING.md (v2 by default; --policy v1 reproduces old boundaries).
+Preparation uses source annotations and quality evidence; no review log is required.
 """
 from __future__ import annotations
 
@@ -40,7 +41,6 @@ PIPELINE_CONFIG = {"punct_chars": [".", "!", "?", "…"], "overwrite": True}
 V1_OUTPUT = DATA_ROOT / "processed" / "nucle_preparation_v1"
 DEFAULT_OUTPUT = DATA_ROOT / "processed" / "nucle_preparation_v2"
 DEFAULT_AUDIT = REPORTS_DIR / "nucle_annotation_audit.csv"
-DEFAULT_REVIEW = DATA_ROOT / "interim" / "nucle_overlap_review_log_all.csv"
 
 
 def require(condition, message):
@@ -151,33 +151,17 @@ def construct_input(paragraph, start, end, sentences):
             "input_sha256": digest(canonical([text, u, v]).encode("utf-8"))}, sent, None
 
 
-def read_metadata(frame, audit_path, review_path, source_hash):
-    """Recompute audit to reject stale metadata; validate review identity and source."""
+def read_quality_flags(frame, audit_path):
+    """Recompute audit to reject quality metadata that differs from the source."""
     expected, flags = annotation_review(frame)
     require(compare_csv(expected, audit_path)["status"] == "match", "Audit CSV differs from current source audit")
     audit = pd.read_csv(audit_path, dtype=str, keep_default_na=False)
     require(not audit.annotation_id.duplicated().any(), "Duplicate audit annotation IDs")
-    by_id = {int(r.annotation_id): sorted(f for f in flags if getattr(r, f) == "True")
-             for r in audit.itertuples()}
-    review = pd.read_csv(review_path, dtype=str, keep_default_na=False)
-    required = {"annotation_id", "essay_id", "error_type", "source_sha256", "decision", "data_action"}
-    require(required <= set(review.columns), "Missing review columns")
-    require(not review.annotation_id.duplicated().any(), "Duplicate review annotation IDs")
-    rows = frame.set_index("annotation_id")
-    decisions = {}
-    for row in review.itertuples():
-        aid = int(row.annotation_id)
-        require(aid not in decisions and aid in rows.index, "Unknown or duplicate review ID")
-        source = rows.loc[aid]
-        require(row.source_sha256 == source_hash, "Review source checksum mismatch")
-        require(row.essay_id == source.essay_id and row.error_type == source.error_type, "Review identity mismatch")
-        require(row.decision in {"retain_original", "unresolved"}, "Unsupported review decision")
-        require(row.data_action == "keep_original_annotation_unchanged", "Review requests source changes; policy must be updated")
-        decisions[aid] = row.decision
-    return by_id, decisions
+    return {int(r.annotation_id): sorted(f for f in flags if getattr(r, f) == "True")
+            for r in audit.itertuples()}
 
 
-def build_dataset(documents, frame, quality_flags, decisions, source_hash, nlp, policy=POLICY):
+def build_dataset(documents, frame, quality_flags, source_hash, nlp, policy=POLICY):
     require(not frame.annotation_id.duplicated().any(), "Duplicate input annotation IDs")
     require(set(quality_flags) == set(frame.annotation_id), "Incomplete quality metadata")
     samples, provenance, sentences, boundary_challenges = [], [], {}, []
@@ -189,7 +173,7 @@ def build_dataset(documents, frame, quality_flags, decisions, source_hash, nlp, 
         record.update(source_sha256=source_hash, policy_version=policy, original_label=row.error_type,
                       mapping="identity" if target else None, status="not_constructible", reason=None,
                       sample_id=None, sentence_id=None, sentence_start_par=None, sentence_end_par=None,
-                      quality_flags=quality_flags[row.annotation_id], review_status=decisions.get(row.annotation_id, "not_reviewed"))
+                      quality_flags=quality_flags[row.annotation_id])
         if policy == POLICY:
             challenge = BOUNDARY_CHALLENGES.get(row.annotation_id)
             record.update(boundary_flags=[challenge["flag"]] if challenge else [],
@@ -297,7 +281,7 @@ def summarize(samples, provenance, policy=POLICY):
                "reasons": dict(Counter(r["reason"] for r in target if r["reason"])),
                "alignment": dict(Counter(s["alignment"] for s in samples)),
                "span_kind": dict(Counter(s["span_kind"] for s in samples)),
-               "quality_flags": {}, "review_status": {},
+               "quality_flags": {},
                "input_duplicates": {"groups": len(duplicates), "annotations": sum(len(g["annotation_ids"]) for g in duplicates),
                                     "ambiguous_groups": sum(g["ambiguous"] for g in duplicates),
                           "ambiguous_annotations": sum(len(g["annotation_ids"]) for g in duplicates if g["ambiguous"])}}
@@ -308,7 +292,6 @@ def summarize(samples, provenance, policy=POLICY):
     for name, rows in (("target", target), ("retained", [r for r in target if r["status"] == "retained"]),
                        ("not_constructible", [r for r in target if r["status"] == "not_constructible"])):
         summary["quality_flags"][name] = dict(Counter(f for r in rows for f in r["quality_flags"]))
-        summary["review_status"][name] = dict(Counter(r["review_status"] for r in rows))
     require(len(target) == len(samples) + counts["not_constructible"], "Sample accounting failed")
     return summary, duplicates
 
@@ -342,12 +325,12 @@ def export_dataset(output, dataset, manifest, input_hashes):
 
 
 def prepare(source=SGML_FILE, annotations=ANNOTATIONS_FILE, audit=DEFAULT_AUDIT,
-            review=DEFAULT_REVIEW, output=None, expected_source_sha256=SOURCE_SHA256, policy=POLICY):
+            output=None, expected_source_sha256=SOURCE_SHA256, policy=POLICY):
     require(policy in {"nucle-preparation-v1", POLICY}, "Unknown preparation policy")
     output = Path(output) if output is not None else (V1_OUTPUT if policy == "nucle-preparation-v1" else DEFAULT_OUTPUT)
     require(not Path(output).exists(), f"Output already exists: {output}; use --output with a new directory")
     inputs = {name: Path(path).resolve() for name, path in
-              (("source", source), ("annotations", annotations), ("audit", audit), ("review", review),
+              (("source", source), ("annotations", annotations), ("audit", audit),
                ("environment_lock", PROJECT_ROOT / "uv.lock"))}
     hashes = {path: file_hash(path) for path in inputs.values()}
     code_paths = sorted((PROJECT_ROOT / "src").rglob("*.py")) + [PROJECT_ROOT / "pyproject.toml"]
@@ -359,13 +342,13 @@ def prepare(source=SGML_FILE, annotations=ANNOTATIONS_FILE, audit=DEFAULT_AUDIT,
     documents = load_nucle(source)
     frame = documents_to_dataframe(documents)
     require(compare_csv(frame, annotations)["status"] == "match", "Understanding CSV differs from SGML")
-    flags, decisions = read_metadata(frame, audit, review, source_hash)
-    dataset = build_dataset(documents, frame, flags, decisions, source_hash, nlp, policy)
+    flags = read_quality_flags(frame, audit)
+    dataset = build_dataset(documents, frame, flags, source_hash, nlp, policy)
     if policy == POLICY and source_hash == SOURCE_SHA256:
         require({c["annotation_id"] for c in dataset["boundary_challenges"]} == set(BOUNDARY_CHALLENGES),
                 "Required boundary challenge case missing or not constructible")
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, capture_output=True, text=True, check=True).stdout.strip()
-    manifest = {"policy_version": policy, "schema_version": 2 if policy == POLICY else 1,
+    manifest = {"policy_version": policy, "schema_version": 3,
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "inputs": {name: {"path": str(path), "sha256": hashes[path]} for name, path in inputs.items()},
                 "code_commit": commit, "code_sha256": {str(p.relative_to(PROJECT_ROOT)): h for p, h in code_hashes.items()},
@@ -382,7 +365,7 @@ def prepare(source=SGML_FILE, annotations=ANNOTATIONS_FILE, audit=DEFAULT_AUDIT,
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name, default in (("source", SGML_FILE), ("annotations", ANNOTATIONS_FILE),
-                          ("audit", DEFAULT_AUDIT), ("review", DEFAULT_REVIEW), ("output", None)):
+                          ("audit", DEFAULT_AUDIT), ("output", None)):
         parser.add_argument(f"--{name}", type=Path, default=default)
     parser.add_argument("--expected-source-sha256", default=SOURCE_SHA256)
     parser.add_argument("--policy", choices=("v1", "v2"), default="v2")
