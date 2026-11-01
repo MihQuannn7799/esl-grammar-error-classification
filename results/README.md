@@ -26,6 +26,7 @@ The classical ablation table contains Full-minus-D aliases of S+L+P+M; names do 
 - [Final project report](reports/final-report.md): translated research narrative, all 34 original tables, 14 references, and selected figures.
 - [BERT comparison](reports/bert-comparison.md): the extended experiment, both original quantitative tables, two figures, and interpretation limits.
 - [Presentation and speaker notes](reports/presentation.md): all 12 presentation sections in English, including translated speaker notes.
+- [Week 11 update](reports/week-11.md): train/validation results, the 18-case validation audit, and team-approved outcomes for 40 BERT/LR cases and 22 consolidated decisions.
 
 These replace the three Vietnamese PDFs in the current repository tree. Numerical results and conclusions are unchanged; links and code-scope notes are adapted to the curated public export. Historical evidence not included here is described as such. For runnable commands, use [RUNNING.md](../docs/RUNNING.md). The shorter [results guide](../docs/RESULTS.md) remains available alongside the complete reports.
 

@@ -45,11 +45,11 @@ Both LR and BERT are correct on 1,860 test examples. BERT alone is correct on 13
 
 For closer inspection, the audit selects 40 cases: 12 BERT-wrong/LR-correct, 12 reverse-direction cases, 10 both-wrong cases, and six both-correct controls. Six gold-SVA examples are prioritized in the first group. IDs are selected before reading sentences/corrections. Gold labels and spans match source SGML in all 40 cases.
 
-Every case has AI-assisted notes; human review/contribution fields remain unfilled at the reporting snapshot. The sample is purposeful: traversal of sorted buckets yields nine ArtOrDet and one Nn in the both-wrong group. Frequencies in this packet cannot estimate corpus prevalence. Notes establish neither causal explanations nor independent expert adjudication.
+The team has completed, reviewed, and approved all 40 case reviews and their contributions to the analysis, confirmed on 1 November 2026. The sample is purposeful: traversal of sorted buckets yields nine ArtOrDet and one Nn in the both-wrong group. Frequencies in this packet cannot estimate corpus prevalence. The observations do not establish causal explanations.
 
-Some spans are fragments; some missing words are anchored to existing neighboring text. Other cases need closer examination of the label/correction relationship. Expert priorities include IDs 23037, 34539, 16809, 30366, 32801, and 32874. A partial-token case correctly classified by both models is retained as a control, avoiding the claim that every fragment causes failure.
+Some spans are fragments; some missing words are anchored to existing neighboring text. Other cases need closer examination of the label/correction relationship. The completed review specifically examined IDs 23037, 34539, 16809, 30366, 32801, and 32874. A partial-token case correctly classified by both models is retained as a control, avoiding the claim that every fragment causes failure.
 
-Original sentences, corrections, and per-case review CSVs remain on the research machine and are not distributed in this repository. Gold labels are unchanged after test. The consolidated queue has 22 distinct pending expert-review IDs.
+Original sentences, corrections, and per-case review CSVs remain on the research machine and are not distributed in this repository. Gold labels are unchanged after test. All 22 consolidated review decisions have been reviewed and approved by the team: nine support keeping the label, six flag label/edit correspondence, three flag correction or replacement boundaries, three identify possibly optional edits, and one records multiple operations in a single edit. Approval accepts the interpretations; it does not change gold or automatically resolve every flagged data issue. See the [Week 11 update](week-11.md).
 
 ## Reading and rechecking the results
 

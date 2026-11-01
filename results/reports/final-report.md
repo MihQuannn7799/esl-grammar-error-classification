@@ -16,7 +16,7 @@ Full Logistic Regression (LR) obtains test Macro-F1 0.8163, Full Decision Tree 0
 
 Initial BERT-small validation Macro-F1 is 0.1984 +/- 0.0030. The extension tests alternative readouts, separate encoder/head learning rates, and longer training with validation-based stopping. Selected span mean obtains validation 0.8183 +/- 0.0011 and test 0.8182 +/- 0.0038 over three seeds. The predeclared primary achieves test F1 0.8146 and accuracy 0.8438. BERT minus LR is -0.0017, CI95% [-0.0184, 0.0182], insufficient to rank them confidently.
 
-Nn/ArtOrDet and Vform/SVA are prominent confusions. Wide spans, multiple edits, and missing words anchored to nonempty spans complicate interpretation. Historical clean-environment replay reproduces 52 classical final-stage fits and saved test predictions. Language analysis is AI-assisted; 22 consolidated IDs still need expert review. Observations are separated from untested explanations.
+Nn/ArtOrDet and Vform/SVA are prominent confusions. Wide spans, multiple edits, and missing words anchored to nonempty spans complicate interpretation. Historical clean-environment replay reproduces 52 classical final-stage fits and saved test predictions. The team has reviewed and approved 18 validation case reviews, 40 BERT/LR case reviews, and all 22 consolidated review decisions as of 1 November 2026. Observations are separated from untested explanations.
 
 ## Reading conventions
 
@@ -364,7 +364,7 @@ Multi-token LR-minus-POS is +0.0449, CI [-0.0401, 0.1262], so stable improvement
 
 ### 8.1. Language audit and interpretation limits
 
-The classical audit has 25 LR errors, five Tree errors where LR is correct, and 10 LR-correct controls. Seeded purposeful selection precedes correction inspection. All 40 cases are rechecked against source, offsets, corrections, tokens, and features. This is AI-assisted review, not expert-independent adjudication or a representative random corpus sample.
+The classical audit has 25 LR errors, five Tree errors where LR is correct, and 10 LR-correct controls. Seeded purposeful selection precedes correction inspection. All 40 cases are rechecked against source, offsets, corrections, tokens, and features. The team has reviewed and approved the case interpretations; the sample is purposeful rather than representative of corpus prevalence.
 
 **Table 20. Difficult patterns observed in the audit**
 
@@ -398,11 +398,11 @@ The positive total agrees with LR preferring ArtOrDet to Nn while POS predicts N
 
 Full-test overlap: both correct 1,860; BERT alone correct 138; LR alone correct 119; both wrong 251. These counts differ in meaning from the purposefully selected audit frequencies.
 
-The extension audits 40 examples: 12 BERT-wrong/LR-correct, 12 reverse-direction cases, 10 both-wrong, and six both-correct controls. Six gold-SVA examples are prioritized in the first bucket. Seed 20261028 selects IDs before sentence/correction inspection. All 40 gold/spans match SGML. AI notes exist for each; human review/contribution fields are unfilled at the reporting snapshot. Bucket traversal yields nine ArtOrDet and one Nn in the both-wrong group, limiting prevalence interpretation.
+The extension audits 40 examples: 12 BERT-wrong/LR-correct, 12 reverse-direction cases, 10 both-wrong, and six both-correct controls. Six gold-SVA examples are prioritized in the first bucket. Seed 20261028 selects IDs before sentence/correction inspection. All 40 gold/spans match SGML. All 40 reviews and their contributions to the analysis have been completed, reviewed, and approved by the team on 1 November 2026. Bucket traversal yields nine ArtOrDet and one Nn in the both-wrong group, limiting prevalence interpretation.
 
-SVA examples motivate examining clausal subjects and coordinated verb chains. Missing words may anchor to nouns, verbs, or fragments, so substring POS does not uniquely determine type. IDs 23037, 34539, 16809, 30366, 32801, and 32874 are prioritized for expert review. Gold stays fixed. No direct experiment attributes disagreement to attention, POS, or truncation. Both models correctly classify partial-token ID 38155, showing fragments do not invariably cause errors.
+SVA examples motivate examining clausal subjects and coordinated verb chains. Missing words may anchor to nouns, verbs, or fragments, so substring POS does not uniquely determine type. IDs 23037, 34539, 16809, 30366, 32801, and 32874 were prioritized in the completed review. Gold stays fixed. No direct experiment attributes disagreement to attention, POS, or truncation. Both models correctly classify partial-token ID 38155, showing fragments do not invariably cause errors.
 
-Corpus text/corrections and notes remain private. Merging the earlier queue and new priorities gives 22 distinct pending IDs.
+Corpus text/corrections and case records remain private. Merging the earlier queue and new priorities gives 22 distinct IDs, all with team-approved review decisions. Nine decisions support the existing label, six flag label/edit correspondence, three flag correction or replacement boundaries, three identify possibly optional edits, and one records a multi-operation edit. Neighboring annotations explain the initially questionable edit at 32801 and agreement at 18531. See the [Week 11 update](week-11.md) for the complete approval summary. Gold and scores remain unchanged.
 
 ## 9. BERT-small: initial experiment, diagnostics, and extension
 
@@ -544,7 +544,7 @@ The portfolio deliberately excludes report generators, internal review/replay he
 | --- | --- | --- |
 | RQ1 | LR Full test F1 0.8163; positive paired CIs over Tree/POS. BERT primary 0.8146; BERT-minus-LR CI contains zero. | One grouped split; one classical seed; known spans, not end-to-end GEC. |
 | RQ2 | POS improves S+L strongly; lexical benefits LR; clearer morphology benefit for Tree. | Variants separately tuned; feature overlap; LR M/D CIs contain zero. |
-| RQ3 | Nn/ArtOrDet and Vform/SVA dominate errors; LR exceeds POS in important same-POS slices. | Purposeful AI-assisted review; descriptive associations do not establish causes. |
+| RQ3 | Nn/ArtOrDet and Vform/SVA dominate errors; LR exceeds POS in important same-POS slices. | Purposefully selected, team-reviewed cases; descriptive associations do not establish causes. |
 
 Full LR is a useful reference: strong F1, sparse representation, and decomposable logit contributions. Span-mean BERT offers a contextual alternative with similar observed performance, not established statistical superiority. Standardized latency/memory were not measured; timings across different experiments describe execution, not controlled deployment cost.
 
@@ -560,7 +560,7 @@ Both BERT phases remain relevant: results depend on readout/training recipe. LR 
 | --- | --- | --- |
 | Gold span supplied | Does not measure detection or correction | Evaluate detection-to-classification on new data if scope expands. |
 | One classical split/seed | CI omits training/split variation | Predeclare multiple seeds/splits or a new external test. |
-| Parser/taxonomy | Representation or label issues may explain some errors | Expert review of 17 original cases; version adjudicated gold separately. |
+| Parser/taxonomy | Representation or label issues may explain some errors | Team-approved review decisions are available; verify and version any later data corrections separately. |
 | Direct-child subject only | Misses subject links through auxiliary/head/conjunction | Controlled subject-inheritance extractor, evaluated on new data. |
 | One small BERT; classical test already seen | Similar scores do not establish equivalence of contextual models | New external test, preregistered design, no tuning on observed test. |
 | Many pointwise CIs | No simultaneous guarantees | Predeclare fewer primary contrasts or correct multiple comparisons. |
@@ -643,13 +643,13 @@ Full-minus-D aliases S+L+P+M for each model; pipeline names do not count distinc
 
 Public aggregates/figures/reports are under [results](../README.md). Corpus text/corrections are omitted; IDs and qualitative descriptions support discussion without reproducing the corpus. Historical research manifests retain their snapshot meaning; this public portfolio is not that locked workspace. Historical evidence mentioned here is not necessarily distributed.
 
-## Appendix C. Contributions, handover, and AI assistance
+## Appendix C. Contributions, review approval, and handover
 
 Classical evaluation and historical verification are complete within Section 10's scope. BERT completes 12 runs, selects span mean by validation, and tests three seeds: primary F1 0.8146; mean/std 0.8182 +/- 0.0038. Earlier phase documents remain historical snapshots.
 
-Names and individual assignments were not supplied at the reporting snapshot. Contributions must be supported by actual code, logs, reviews, or analyses rather than inferred from module lists or team-wide outcomes. The portfolio invents neither individual authorship nor submission confirmation.
+Named assignments are recorded only for the 18-case validation audit: Quân, Duy, and Công have six cases each. The [Week 11 report](week-11.md) lists the IDs. These assignments do not allocate ownership of the entire project; other contributions and submission confirmation require their own evidence.
 
-AI tools assist code, tests, analysis, and editing; the project user runs BERT train/test commands. AI-assisted language review is not independent expert adjudication. Hashes, recomputed metrics, and joins validate technical properties, not every linguistic judgment. Merging 17 earlier cases with six priorities after overlap removal leaves 22 pending IDs; gold stays fixed.
+The team reviewed and approved all 40 BERT/LR case reviews and all 22 consolidated review decisions on 1 November 2026. Hashes, recomputed metrics, and joins validate technical properties; case review records the accepted linguistic interpretations and remaining data concerns. Approval does not silently relabel the corpus or certify every source correction as obligatory; gold stays fixed.
 
 For interviews, contributors should explain a real sample's input, feature/encoding, prediction/gold; the group split; one personally inspected error; and a small check they understand. Administrative submission and contribution confirmation remain team responsibilities.
 

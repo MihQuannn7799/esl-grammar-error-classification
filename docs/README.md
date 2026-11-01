@@ -16,6 +16,7 @@ The [complete README runbook](../README.md#complete-file-by-file-runbook) lists 
 | [Final project report](../results/reports/final-report.md) | Full English study, 34 tables, 14 references, methods, findings, and limitations |
 | [BERT comparison](../results/reports/bert-comparison.md) | Extended BERT experiment and paired comparison with classical models |
 | [Presentation](../results/reports/presentation.md) | Twelve presentation sections with speaker notes |
+| [Week 11 update](../results/reports/week-11.md) | Training results and team-approved validation/BERT/LR review outcomes |
 | [Results index](../results/README.md) | Aggregate CSVs, figures, provenance, and validation metadata |
 | [Test scope](../tests/README.md) | Synthetic coverage and expected licensed-fixture skip |
 | [Contribution guide](../CONTRIBUTING.md) | Development checks, research integrity, and publication scope |
