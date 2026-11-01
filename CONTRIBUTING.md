@@ -2,14 +2,7 @@
 
 ## Start from the public workflow
 
-Read the [architecture](docs/ARCHITECTURE.md) and [running guide](docs/RUNNING.md). Use a Git checkout, Python 3.13.7, and the existing `uv.lock`. Install optional BERT dependencies to exercise all synthetic tests:
-
-```bash
-uv sync --locked --python 3.13.7
-uv pip install --python .venv -r requirements-bert.txt
-uv run --no-sync python -m pytest tests -q
-uv run --no-sync python -m examples.synthetic_demo
-```
+Read the [architecture](docs/ARCHITECTURE.md) and follow the [canonical running guide](docs/RUNNING.md): install the base and optional BERT dependencies in section 1, run the synthetic suite in section 2, and run the demo in section 3. Use a Git checkout and the recorded Python version. Installation and execution commands are maintained there rather than duplicated here.
 
 The licensed boundary fixture is intentionally absent. Do not add corpus excerpts to make its test stop skipping. Synthetic BERT tests use local random models, not downloaded pretrained weights.
 
@@ -33,7 +26,6 @@ The CI workflow runs the full synthetic suite and demo on Windows and Linux. A p
 ## Results and documentation
 
 English Markdown reports are maintained under `results/reports/`. `results/*.csv` and figures are saved research evidence; changing their presentation must not alter numerical conclusions or imply new training. Keep relative links working and update the documentation index when adding a guide.
-
 
 ## Attribution
 

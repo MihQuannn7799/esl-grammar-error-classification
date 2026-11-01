@@ -2,12 +2,12 @@
 
 ## Suggested reading path
 
-1. Run the [synthetic demo](../README.md#quick-start) to see the known-span prediction contract.
+1. Follow [environment setup](RUNNING.md#1-install-the-environment), then run the [synthetic demo](RUNNING.md#3-run-the-synthetic-demonstration) to see the known-span prediction contract.
 2. Read [Architecture](ARCHITECTURE.md) for grouping, train-only encoding, and model data flow.
 3. Read [Results](RESULTS.md) for model selection, confidence intervals, and limitations.
-4. Use [Running the project](RUNNING.md) for environment setup and research-input requirements.
+4. Use [Running the project](RUNNING.md#4-research-data-requirements) for research inputs and training workflows.
 
-The [complete README runbook](../README.md#complete-file-by-file-runbook) lists commands for every runnable script and test file, smoke imports for shared modules, and usage of configuration/results files.
+The [file-by-file reference](RUNNING.md#10-file-by-file-reference) is the canonical source for every script command, module API example, individual test command, and configuration/result file. README introduces the project; RUNNING.md owns setup and execution instructions.
 
 ## Reports and evidence
 
