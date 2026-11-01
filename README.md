@@ -95,5 +95,3 @@ README is the project overview and navigation page. RUNNING.md is the single sou
 ## Attribution
 
 An academic team project using NUCLE: Dahlmeier, Ng, and Wu (2013), *Building a Large Annotated Corpus of Learner English: The NUS Corpus of Learner English*. Obtain the dataset separately under its applicable terms.
-
-Individual contributions are not inferred from module ownership. Quân, Duy, and Công are assigned six cases each in the 18-case validation audit. The team has reviewed and finalized all 40 BERT/LR case reviews and all 22 consolidated review decisions, confirmed on 1 November 2026. The reports retain unresolved data concerns and methodological limitations; gold labels and model scores are unchanged.
