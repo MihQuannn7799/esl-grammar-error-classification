@@ -52,7 +52,7 @@ BERT improves four class F1 values relative to LR but is weaker on SVA: **0.7392
 
 The first BERT-small benchmark achieved validation Macro-F1 about 0.1984 ± 0.0030 across three seeds. Small-set diagnostics showed that the model could memorize 100 train examples, but memorization did not establish generalization. The later extension changed both readout and training settings; improvement cannot be attributed to span mean alone.
 
-The team has reviewed and approved all 40 BERT/LR case reviews and all 22 consolidated review decisions, confirmed on 1 November 2026. The sample follows disagreement/control buckets and does not estimate corpus error prevalence. The accepted decisions comprise nine supported labels, six label/edit concerns, three correction or boundary concerns, three possibly optional edits, and one multi-operation edit. Gold labels remain unchanged. The [Week 11 report](../results/reports/week-11.md) includes the validation audit, review outcomes, and limitations; corpus text and private case records are not distributed here.
+The team has reviewed and finalized all 40 BERT/LR case reviews and all 22 consolidated review decisions, confirmed on 1 November 2026. The sample follows disagreement/control buckets and does not estimate corpus error prevalence. The review outcomes comprise nine supported labels, six label/edit concerns, three correction or boundary concerns, three possibly optional edits, and one multi-operation edit. Gold labels remain unchanged. The reports retain the validation-audit findings, review outcomes, and limitations; corpus text and private case records are not distributed here.
 
 ## Limits of the evidence
 

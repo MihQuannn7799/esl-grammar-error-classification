@@ -110,8 +110,8 @@ LR/Tree consume feature vectors; BERT consumes span-marked sentences.
 - Both correct: 1,860; BERT-only correct: 138; LR-only correct: 119; both wrong: 251.
 - Inspect 40 selected cases: 12 per disagreement direction, 10 both-wrong, six both-correct controls.
 - Missing-word errors can have nonempty spans; some spans are fragments.
-- The team has reviewed and approved 40 BERT/LR case reviews and 22 consolidated review decisions; gold stays fixed.
-- Approved interpretations record label, correction, and span concerns; the purposeful sample does not estimate corpus prevalence.
+- The team has reviewed and finalized 40 BERT/LR case reviews and 22 consolidated review decisions; gold stays fixed.
+- Reviewed interpretations record label, correction, and span concerns; the purposeful sample does not estimate corpus prevalence.
 
 **Speaker notes (~50 seconds):** Explain a case personally read on the research machine. ID 38155 is a partial token correctly classified by both models, cautioning against treating all fragments as failures. ID 34539 motivates checking the relationship between label and correction. These are purposeful cases, not a representative random corpus sample; corpus text is not distributed here.
 

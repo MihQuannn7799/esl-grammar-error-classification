@@ -82,7 +82,6 @@ results/      Aggregate CSVs, figures, and English Markdown reports
 | Interpret scores and confidence intervals | [Results and limitations](docs/RESULTS.md) |
 | Read the complete study | [Final report: 34 tables and 14 references](results/reports/final-report.md) |
 | Inspect the BERT extension | [BERT comparison](results/reports/bert-comparison.md) |
-| Read the latest training and approved review outcomes | [Week 11 report](results/reports/week-11.md) |
 | Present the findings | [Presentation and speaker notes](results/reports/presentation.md) |
 | Contribute or run project checks | [Contribution guide](CONTRIBUTING.md) |
 
@@ -432,7 +431,6 @@ These files are consumed by a tool or viewed as artifacts; they are not standalo
 | [results/reports/bert-comparison.md](results/reports/bert-comparison.md) | Read the extended BERT comparison and interpretation; no execution. |
 | [results/reports/final-report.md](results/reports/final-report.md) | Read the complete English study with 34 tables and 14 references; no report generator required. |
 | [results/reports/presentation.md](results/reports/presentation.md) | Read the 12 English presentation sections and speaker notes. |
-| [results/reports/week-11.md](results/reports/week-11.md) | Read training/validation comparisons and team-approved error-review outcomes; no execution or additional dataset download. |
 | [results/seed_results.csv](results/seed_results.csv) | View selected BERT seed/checkpoint outcomes and primary designation. |
 | [results/validation_grid.csv](results/validation_grid.csv) | View BERT configuration means and sample standard deviations. |
 | [tests/README.md](tests/README.md) | Read test inputs, optional dependencies, expected skips, and Git HEAD requirement. |
@@ -444,4 +442,4 @@ These files are consumed by a tool or viewed as artifacts; they are not standalo
 
 An academic team project using NUCLE: Dahlmeier, Ng, and Wu (2013), *Building a Large Annotated Corpus of Learner English: The NUS Corpus of Learner English*. Obtain the dataset separately under its applicable terms.
 
-Individual contributions are not inferred from module ownership. Quân, Duy, and Công are assigned six cases each in the 18-case validation audit. The team has reviewed and approved all 40 BERT/LR case reviews and all 22 consolidated review decisions, confirmed on 1 November 2026. The reports retain unresolved data concerns and methodological limitations; gold labels and model scores are unchanged.
+Individual contributions are not inferred from module ownership. Quân, Duy, and Công are assigned six cases each in the 18-case validation audit. The team has reviewed and finalized all 40 BERT/LR case reviews and all 22 consolidated review decisions, confirmed on 1 November 2026. The reports retain unresolved data concerns and methodological limitations; gold labels and model scores are unchanged.
