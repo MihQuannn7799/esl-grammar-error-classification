@@ -95,6 +95,23 @@ The repository excludes corpus text/corrections, row-level predictions, private 
 
 This section covers **every Python file and every other public file in this repository**, directly in the README. Execute commands from the repository root. `uv run --no-sync python` uses the environment installed in Quick start, including optional BERT dependencies when needed. The commands below describe how to run each tool; they were not all executed on research data while writing this guide.
 
+### Find the right instructions
+
+A command-line entry point performs a workflow when invoked with `python -m ...`. A shared module exposes functions, classes, or constants for another runner to use; executing that file directly is not a substitute for calling its API. Test modules run through pytest, and data/configuration/document files are read by their consuming tools.
+
+| Files or task | Instructions |
+|---|---|
+| Public end-to-end example | [A. Public demo](#a-public-demo) |
+| Data download, understanding, quality, preparation, comparison, split | [B. Data preparation scripts](#b-data-preparation-scripts) |
+| Feature extraction, LR/Tree benchmark and ablations | [C. Features and classical training](#c-features-and-classical-training) |
+| Current and historical BERT runners | [D. BERT training](#d-bert-training) |
+| Evaluation, replay and diagnostics | [E. Evaluation and diagnostics](#e-evaluation-and-diagnostics) |
+| Parsers, boundary helpers, metrics, model classes and package files | [F. Shared modules and actual API examples](#f-shared-modules-and-package-files) |
+| Individual test modules | [G. Individual tests](#g-individual-tests) |
+| Configuration, reports, CSVs, figures and repository settings | [H. Other files](#h-configuration-documentation-and-result-files) |
+
+The sections are expanded below. In particular, `src/data/nucle_sgml.py`, `parse_nucle.py`, `sentence_boundaries.py`, `boundary_challenges.py`, `constants.py`, and `__init__.py` are shared modules documented in F; the six runnable data scripts are in B. The import checks in F only confirm availability. The following API examples demonstrate actual parsing, conversion, boundary repair, scoring, and model fitting.
+
 ### Inputs and execution order
 
 | Level | Required local inputs | What becomes available |
@@ -110,8 +127,7 @@ The exact historical review inputs, protocols, row-level predictions, and task c
 
 Use fresh output directories where the implementation requires them. Some fixed-path diagnostics write into `reports/`; do not batch-execute every `.py`. **Do not pass `--help` to scripts without argparse:** `nucle_final_selection.py --help` would start its fitting branch, and the downloader does not interpret a help flag.
 
-<details>
-<summary><strong>A. Public demo</strong></summary>
+### A. Public demo
 
 #### `examples/synthetic_demo.py`
 
@@ -121,10 +137,7 @@ uv run --no-sync python -m examples.synthetic_demo
 
 Needs base dependencies including spaCy's English package. Runs the actual feature extractor, train-only encoder, and LR on hand-written examples; prints predictions and toy metrics. No corpus/checkpoint download and no output files. The toy score is not a NUCLE benchmark.
 
-</details>
-
-<details>
-<summary><strong>B. Data scripts: every file and its inputs/outputs</strong></summary>
+### B. Data preparation scripts
 
 #### `src/data/data_download.py`
 
@@ -176,10 +189,7 @@ uv run --no-sync python -m src.data.group_split_nucle --source data_set/raw/nucl
 
 Options: `--source`, `--prepared`, `--duplicate-report`, `--output`, `--seed`. Requires source, complete preparation, and duplicate evidence. Writes essay-to-group mappings, grouping decisions/policy, sample split manifest, summary, and hashes. Keeps connected groups in one partition and refuses an existing output.
 
-</details>
-
-<details>
-<summary><strong>C. Features, baselines, and classical training</strong></summary>
+### C. Features and classical training
 
 #### `src/features/nucle_pos.py`
 
@@ -224,10 +234,7 @@ The first command performs 40 added grid fits plus 12 historical refits, reconst
 
 The fitting branch refuses an existing final-evaluation directory; freeze refuses an existing lock. There is no general `--output` or `--help` parser. The public export cannot satisfy an original research lock merely by copying aggregate results.
 
-</details>
-
-<details>
-<summary><strong>D. BERT training: current workflow and historical runner</strong></summary>
+### D. BERT training
 
 #### `src/training/bert_small_experiment.py` (recommended)
 
@@ -261,10 +268,7 @@ uv run --no-sync python -m src.training.bert_span_classifier --train
 
 Choose exactly one of `--pilot` or `--train` per invocation. Requires v2 samples/split and local pretrained metadata/files. `--pilot` runs 20 train batches and writes timing/tokenization information to `reports/contextual_model_validation/bert/pilot.json`; it performs optimization steps but is not the full benchmark. `--train` additionally requires the original `docs/bert_experiment_protocol.md`, runs the historical five-epoch search, and writes per-run checkpoint/history/predictions plus `selection.json`. It has no test path or configurable output flag and rejects a completed selection. Prefer the extended runner for a new experiment.
 
-</details>
-
-<details>
-<summary><strong>E. Every evaluation and diagnostic script</strong></summary>
+### E. Evaluation and diagnostics
 
 These tools need the named local experiment artifacts. Public aggregate CSVs under `results/` are for inspection and do not substitute for excluded row-level predictions, checkpoints, or original protocol/lock records.
 
@@ -340,12 +344,9 @@ uv run --no-sync python -m src.evaluation.logistic_thread_sensitivity
 
 No CLI options. Requires canonical features/encoder/split, original benchmark validation predictions, and the preceding sensitivity run's `v2_validation_predictions.csv`. Refits the fixed LR at four and ten CPU threads on train, compares validation predictions, and writes `reports/contextual_model_validation/audit/thread_diagnostic.json`, potentially replacing it. This is a numerical-sensitivity probe, not a different test score or a reason to replace the published baseline.
 
-</details>
+### F. Shared modules and package files
 
-<details>
-<summary><strong>F. Library modules and package files: how to use them</strong></summary>
-
-These files do not have standalone main programs. Running `python file.py` would only define objects or constants and does not perform the intended pipeline. Import them from the associated runner or use the smoke-import commands below. Successful package imports exit without output; function/class examples print the API name. These commands do not parse a corpus or fit a model. BERT's wrapper requires the optional dependency.
+These files do not have standalone main programs. Running `python file.py` would only define objects or constants and does not perform the intended pipeline. Import them from the associated runner. The commands in the table below are import checks only: package imports exit without output, while selected checks print an API name or metadata. The actual-use examples after the table perform synthetic parsing, conversion, scoring, and fitting. BERT's wrapper requires the optional dependency.
 
 | File | Role / actual use | Import/smoke command |
 |---|---|---|
@@ -368,10 +369,113 @@ These files do not have standalone main programs. Running `python file.py` would
 
 The runnable feature and training scripts above import these shared modules. For full input-to-prediction usage, run `examples/synthetic_demo.py` rather than treating an import smoke test as model evaluation.
 
-</details>
 
-<details>
-<summary><strong>G. Run every individual test file</strong></summary>
+#### Actual use: SGML parser and annotation DataFrame
+
+After installing the base dependencies, start Python from the repository root:
+
+```bash
+uv run --no-sync python
+```
+
+Paste each Python example below into that interpreter. These examples use synthetic text or in-memory values, do not require NUCLE, and do not write dataset or result files. Leave Python with `exit()` before running another shell command.
+
+This example calls both `src/data/nucle_sgml.py` and `src/data/parse_nucle.py`, rather than merely importing them:
+
+```python
+from src.data.nucle_sgml import NucleSGMLParser
+from src.data.parse_nucle import documents_to_dataframe
+
+source = (
+    '<DOC nid="demo"><TEXT><P>They was happy.</P></TEXT>'
+    '<ANNOTATION><MISTAKE start_par="0" start_off="5" end_par="0" end_off="8">'
+    '<TYPE>SVA</TYPE><CORRECTION>were</CORRECTION>'
+    '</MISTAKE></ANNOTATION></DOC>'
+)
+parser = NucleSGMLParser()
+parser.feed(source)
+parser.close()
+frame = documents_to_dataframe(parser.documents)
+print(frame[["annotation_id", "error_span", "error_type", "valid_offset"]].to_string(index=False))
+```
+
+Expected: one annotation, ID `0`, span `was`, label `SVA`, and a valid offset. The parser produces document/annotation objects; the converter produces a DataFrame. For an authorized real SGML file, import `Path` from `pathlib` and `load_nucle` from `src.data.nucle_sgml`, then call `load_nucle(Path("data_set/raw/nucle3.2.sgml"))` to supply documents to the same converter. To export the actual CSV and understanding report, use the `data_understanding.py` command in B.
+
+#### Actual use: sentence-boundary helper
+
+`src/data/sentence_boundaries.py` expects a spaCy Doc with sentence boundaries, not a filename:
+
+```python
+import spacy
+from src.data.sentence_boundaries import repaired_starts
+
+nlp = spacy.blank("en")
+nlp.add_pipe("sentencizer")
+doc = nlp("First sentence. Second sentence.")
+print(repaired_starts(doc))
+```
+
+Expected starts: `[0, 16]`, measured as Python character offsets. For complete v1/v2 sample construction, use `prepare_nucle.py`; this helper alone does not build the dataset. The boundary-case metadata and path/label constants have import-and-inspect commands in the table above.
+
+#### Actual use: five-class metrics
+
+`src/evaluation/metrics.py` takes aligned true/predicted label sequences:
+
+```python
+from src.evaluation.metrics import scores
+
+truth = ["ArtOrDet", "Prep", "Nn", "Vform", "SVA"]
+prediction = ["ArtOrDet", "Prep", "Nn", "SVA", "SVA"]
+result = scores(truth, prediction)
+print(result["accuracy"])
+print(result["macro_f1"])
+print(result["per_label"]["SVA"])
+```
+
+Expected accuracy: `0.8`; Macro-F1: approximately `0.733333`. SVA precision is `0.5`, recall is `1.0`, and F1 is approximately `0.666667`. This computes metrics from supplied labels; it does not generate model predictions.
+
+#### Actual use: tree model API
+
+`src/models/nucle_tree.py` consumes sparse feature dictionaries and integer class indices:
+
+```python
+from src.data.constants import TARGET_LABELS
+from src.models.nucle_tree import GiniTree
+
+rows = [{0: 1.0}, {0: 2.0}, {0: 8.0}, {0: 9.0}]
+labels = [0, 0, 4, 4]
+tree = GiniTree(
+    max_depth=2,
+    min_samples_leaf=1,
+    balanced=False,
+    numeric_features={0},
+).fit(rows, labels)
+indices = tree.predict([{0: 1.5}, {0: 8.5}])
+print([TARGET_LABELS[i] for i in indices])
+```
+
+Expected: `["ArtOrDet", "SVA"]`. The numeric feature is deliberately synthetic; this checks the fitting/prediction API and is not a grammar benchmark.
+
+#### Actual use: LR, encoder, and BERT wrapper through their callers
+
+After leaving the Python interpreter, run the existing end-to-end example to exercise `TrainOnlyEncoder` and `fit_logistic` with synthetic sentence/span inputs:
+
+```bash
+uv run --no-sync python -m examples.synthetic_demo
+```
+
+For research LR/Tree training, use `src.training.nucle_benchmark` or `src.training.nucle_ablation` in C with their required prepared features. These runners construct the inputs and call the library models; there is no independent `nucle_logistic.py` training CLI.
+
+For `src/models/bert_span_readout.py`, install the optional BERT dependencies, then exercise actual forwards, span masks, and gradients using the existing tiny-model tests:
+
+```bash
+uv run --no-sync python -m pytest tests/test_bert_readout.py -q
+```
+
+The tests create random tiny BERT models without downloading pretrained checkpoints. Real training calls the wrapper from `src.training.bert_small_experiment` in D. The wrapper cannot perform a useful standalone forward without a base model, marker IDs, and token tensors. Package `__init__.py` files only establish importable packages; their import checks are the appropriate standalone check.
+
+
+### G. Individual tests
 
 Use pytest, not `python tests/test_*.py`: these modules define tests but have no test-running main function. The aggregate command is `uv run --no-sync python -m pytest tests -q`. Install `requirements-bert.txt` for all BERT-related coverage. A licensed-fixture skip is expected in a public checkout.
 
@@ -394,10 +498,7 @@ Use pytest, not `python tests/test_*.py`: these modules define tests but have no
 
 Read [tests/README.md](tests/README.md) for test scope. Tests do not recreate the NUCLE research run, acquire corpus permissions, or adjudicate gold labels.
 
-</details>
-
-<details>
-<summary><strong>H. Configuration, documentation, result, and repository files</strong></summary>
+### H. Configuration, documentation, and result files
 
 These files are consumed by a tool or viewed as artifacts; they are not standalone Python scripts. Dataset-derived inputs used by training live under ignored `data_set/` and `reports/`, not in the public aggregate result files.
 
@@ -436,7 +537,7 @@ These files are consumed by a tool or viewed as artifacts; they are not standalo
 | [tests/README.md](tests/README.md) | Read test inputs, optional dependencies, expected skips, and Git HEAD requirement. |
 | [uv.lock](uv.lock) | Consumed by the same locked uv installation; not runnable Python and not the historical model-selection lock. |
 
-</details>
+
 
 ## Attribution
 
