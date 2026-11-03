@@ -1,8 +1,6 @@
 # Presentation: Grammar Error Classification on NUCLE
 
-**Research snapshot:** October 28, 2026. **English Markdown edition:** October 31, 2026.
 
-This replaces the 12-slide Vietnamese presentation PDF. Each section retains the slide's message and translates its speaker notes. Approximate speaking time is 9-10 minutes; no official interview duration was supplied. Contribution statements require individual confirmation rather than inference from this presentation.
 
 ## 1. Grammar error classification on NUCLE
 
