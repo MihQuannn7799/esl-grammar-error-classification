@@ -4,9 +4,6 @@
 
 Original sentence and known error span | Linguistic features | Logistic Regression | Decision Tree | BERT-small
 
-**Research results updated:** October 28, 2026. **English Markdown edition:** October 31, 2026.
-
-This edition replaces the Vietnamese PDF in the portfolio. It retains all 34 research tables, including complete configuration/result appendices. The prose is translated and formatted for Markdown; selected published figures and repository links are adapted to the public export. Historical private artifacts are described as evidence, not implied to be distributed. No model training, additional test predictions, or gold-label changes were performed for this conversion.
 
 ## Abstract
 
