@@ -1,15 +1,14 @@
-"""The v1/v2 comparison independently verifies sentence and span alignment."""
+"""Prepared samples preserve sentence, span, and token alignment."""
 from copy import deepcopy
 
 import pytest
 
-from src.data.compare_preparation import check_alignment
 from src.data.nucle_sgml import load_nucle
 from src.data.parse_nucle import documents_to_dataframe
-from src.data.prepare_nucle import build_dataset, file_hash, make_nlp
+from src.data.prepare_nucle import build_dataset, check_alignment, file_hash, make_nlp
 
 
-def test_comparison_alignment_checks_token_assignment_and_partial_flags(tmp_path):
+def test_preparation_alignment_checks_token_assignment_and_partial_flags(tmp_path):
     source = tmp_path / "source.sgml"
     source.write_text('<DOC nid="x"><TEXT><P>Dogs run.</P></TEXT><ANNOTATION>'
                       '<MISTAKE start_par="0" start_off="3" end_par="0" end_off="4">'

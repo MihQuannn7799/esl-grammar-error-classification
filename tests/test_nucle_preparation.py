@@ -209,27 +209,3 @@ def test_cli_preparation_runs_without_review_log(tmp_path):
     assert [(row["sentence"], row["error_span"], row["error_type"]) for row in rows] == [
         ("Dogs run.", "Dogs", "Nn")]
     assert "review" not in json.loads((output / "manifest.json").read_text())["inputs"]
-
-
-def test_compare_preparations_without_overlap_review_metadata(tmp_path, monkeypatch):
-    from src.data import compare_preparation
-
-    source, annotations, audit, _ = make_source_artifacts(tmp_path)
-    outputs = [tmp_path / "v1", tmp_path / "v2"]
-    for output, policy in zip(outputs, ["nucle-preparation-v1", "nucle-preparation-v2"]):
-        prepare(source, annotations, audit, output=output,
-                expected_source_sha256=file_hash(source), policy=policy)
-    # This optional historical comparison has its own boundary-decision input.
-    interim = tmp_path / "interim"
-    interim.mkdir()
-    (interim / "nucle_boundary_decisions.jsonl").write_text(
-        json.dumps({"annotation_id": 0, "boundary": "keep", "issue_type": "synthetic"}) + "\n",
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(compare_preparation, "DATA_ROOT", tmp_path)
-    summary = compare_preparation.compare(
-        old=outputs[0], new=outputs[1], output=tmp_path / "comparison", source=source,
-    )
-    assert summary["mechanical_checked"] == 1
-    assert summary["input_changed"] == 0
-    assert summary["source_metadata_unchanged"]

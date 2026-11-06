@@ -11,8 +11,8 @@ def run():
     dim=len(json.loads((FEATURE_DIR/'encoder.json').read_text())['feature_names'])
     x=matrix_for(tr,features,dim); xv=matrix_for(va,features,dim)
     y=[LABELS.index(targets[s]['error_type']) for s in tr]
-    old={r['sample_id']:r['best_lr'] for r in csvread(ROOT/'reports/nucle_feature_benchmark_solver_v2/validation_predictions.csv')}
-    audit={r['sample_id']:r['lr'] for r in csvread(ROOT/'reports/contextual_model_validation/audit/v2_validation_predictions.csv')}
+    old={r['sample_id']:r['best_lr'] for r in csvread(ROOT/'reports/nucle_feature_benchmark/validation_predictions.csv')}
+    audit={r['sample_id']:r['lr'] for r in csvread(ROOT/'reports/contextual_model_validation/audit/validation_predictions.csv')}
     results=[]
     for threads in [4,10]:
         torch.set_num_threads(threads); w,b,d=fit_logistic(x,y,0.1,False)

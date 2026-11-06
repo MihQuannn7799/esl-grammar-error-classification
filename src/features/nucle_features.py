@@ -23,9 +23,9 @@ except ModuleNotFoundError:
     from src.data.constants import DATA_ROOT, PROJECT_ROOT
     from src.features.nucle_pos import align_span, load_tagger, require
 
-PREPARED_DIR = DATA_ROOT / "processed" / "nucle_preparation_v2"
+PREPARED_DIR = DATA_ROOT / "processed" / "nucle_preparation"
 SPLIT_DIR = DATA_ROOT / "split" / "nucle_group_split"
-DEFAULT_OUTPUT = DATA_ROOT / "features" / "nucle_features_v1"
+DEFAULT_OUTPUT = DATA_ROOT / "features" / "nucle_features"
 MORPH_FIELDS = ("Number", "Person", "Tense", "VerbForm")
 LEXICAL_LIMIT = 500
 SPECIAL = "__MISSING__"

@@ -24,7 +24,7 @@ except ImportError:
     from nucle_sgml import load_nucle
     from prepare_nucle import canonical, file_hash, require
 
-PREPARED = DATA_ROOT / "processed" / "nucle_preparation_v2"
+PREPARED = DATA_ROOT / "processed" / "nucle_preparation"
 DUPLICATES = DATA_ROOT.parent / "reports" / "nucle_duplicate_content.json"
 OUTPUT = DATA_ROOT / "split" / "nucle_group_split"
 SEED = 20261013

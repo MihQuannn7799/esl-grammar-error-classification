@@ -35,7 +35,7 @@ def train_subset():
     marker_ids=tok.convert_tokens_to_ids(['[SPAN_START]','[SPAN_END]'])
     assert len(set(marker_ids))==2 and tok.unk_token_id not in marker_ids
     rows=[]; signatures=defaultdict(list); counts=Counter(); audit=Counter(); sample_labels={}
-    with (ROOT/'data_set/processed/nucle_preparation_v2/samples.jsonl').open(encoding='utf-8') as f:
+    with (ROOT/'data_set/processed/nucle_preparation/samples.jsonl').open(encoding='utf-8') as f:
         for line in f:
             r=json.loads(line); sid=r['sample_id']
             if partitions[sid]!='train': continue
@@ -190,7 +190,7 @@ def run():
     source,tok,rows=train_subset()
     source_selection=json.loads((ROOT/'reports/contextual_model_validation/bert/selection.json').read_text())
     checkpoint=ROOT/source_selection['primary_run']/'checkpoint'
-    manifest={'started_utc':datetime.now(timezone.utc).isoformat(),'device':'cpu','threads':4,'seed':SEED,'source':source,'old_checkpoint':str(checkpoint.relative_to(ROOT)),'torch':torch.__version__,'transformers':transformers.__version__,'python':platform.python_version(),'protocol_sha256':digest(ROOT/'docs/bert_learning_diagnostics_protocol.md'),'code_sha256':digest(Path(__file__)),'readout_code_sha256':digest(ROOT/'src/models/bert_span_readout.py'),'split_sha256':digest(ROOT/'data_set/split/nucle_group_split/split_manifest.csv'),'samples_sha256':digest(ROOT/'data_set/processed/nucle_preparation_v2/samples.jsonl'),'selected_ids_sha256':digest(OUT/'selected_train_ids.csv'),'validation_scored':False,'test_scored':False}
+    manifest={'started_utc':datetime.now(timezone.utc).isoformat(),'device':'cpu','threads':4,'seed':SEED,'source':source,'old_checkpoint':str(checkpoint.relative_to(ROOT)),'torch':torch.__version__,'transformers':transformers.__version__,'python':platform.python_version(),'protocol_sha256':digest(ROOT/'docs/bert_learning_diagnostics_protocol.md'),'code_sha256':digest(Path(__file__)),'readout_code_sha256':digest(ROOT/'src/models/bert_span_readout.py'),'split_sha256':digest(ROOT/'data_set/split/nucle_group_split/split_manifest.csv'),'samples_sha256':digest(ROOT/'data_set/processed/nucle_preparation/samples.jsonl'),'selected_ids_sha256':digest(OUT/'selected_train_ids.csv'),'validation_scored':False,'test_scored':False}
     dump(OUT/'manifest.json',manifest)
     balanced_batch=[rows[c*20+j] for c in range(5) for j in range(4)]
     gradients={}

@@ -38,14 +38,54 @@ POLICY = "nucle-preparation-v2"
 SPACY_VERSION = "3.8.7"
 SOURCE_SHA256 = "8441a60060730bdc6af1e79a064c68441ecb24a66da91ea2aab0061a64a130ac"
 PIPELINE_CONFIG = {"punct_chars": [".", "!", "?", "…"], "overwrite": True}
-V1_OUTPUT = DATA_ROOT / "processed" / "nucle_preparation_v1"
-DEFAULT_OUTPUT = DATA_ROOT / "processed" / "nucle_preparation_v2"
+LEGACY_OUTPUT = DATA_ROOT / "processed" / "nucle_preparation_legacy"
+DEFAULT_OUTPUT = DATA_ROOT / "processed" / "nucle_preparation"
 DEFAULT_AUDIT = REPORTS_DIR / "nucle_annotation_audit.csv"
 
 
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def check_alignment(sample, sentence, record, paragraph):
+    text = sentence["sentence"]
+    require(sample["sentence"] == text == paragraph[record["sentence_start_par"]:record["sentence_end_par"]],
+            "Sentence/source mismatch")
+    start, end = sample["error_start"], sample["error_end"]
+    require(0 <= start <= end <= len(text), "Invalid sample offsets")
+    require(record["start_off"] == record["sentence_start_par"] + start
+            and record["end_off"] == record["sentence_start_par"] + end, "Offset conversion mismatch")
+    require(text[start:end] == sample["error_span"] == paragraph[record["start_off"]:record["end_off"]],
+            "Span mismatch")
+    tokens = sentence["tokens"]
+    last = 0
+    for index, token in enumerate(tokens):
+        token_start, token_end = token["start"], token["end"]
+        require(token["index"] == index and last <= token_start < token_end <= len(text),
+                "Token ordering mismatch")
+        require(text[token_start:token_end] == token["text"] and not token["text"].isspace(),
+                "Token slice mismatch")
+        require(not text[last:token_start].strip(), "Unrepresented non-whitespace text")
+        last = token_end
+    require(not text[last:].strip(), "Unrepresented sentence tail")
+    expected_span = [] if start == end else [i for i, token in enumerate(tokens)
+                                               if max(start, token["start"]) < min(end, token["end"])]
+    expected_left = [i for i, token in enumerate(tokens) if token["end"] <= start][-2:]
+    expected_right = [i for i, token in enumerate(tokens) if token["start"] >= end][:2]
+    require(sample["span_token_indices"] == expected_span and sample["left_token_indices"] == expected_left
+            and sample["right_token_indices"] == expected_right, "Token assignment mismatch")
+    cuts = [any(token["start"] < point < token["end"] for token in tokens) for point in (start, end)]
+    require(cuts == [sample["cuts_start_token"], sample["cuts_end_token"]], "Partial-token flags mismatch")
+    if start == end:
+        require(not any(cuts), "Insertion inside token")
+        expected_alignment = "insertion_boundary"
+    else:
+        require(bool(expected_span), "No token overlap")
+        expected_alignment = ("partial_token" if any(cuts) else "exact" if
+                              start == tokens[expected_span[0]]["start"]
+                              and end == tokens[expected_span[-1]]["end"] else "whitespace_edge")
+    require(sample["alignment"] == expected_alignment, "Alignment category mismatch")
 
 
 def canonical(value):
@@ -327,7 +367,7 @@ def export_dataset(output, dataset, manifest, input_hashes):
 def prepare(source=SGML_FILE, annotations=ANNOTATIONS_FILE, audit=DEFAULT_AUDIT,
             output=None, expected_source_sha256=SOURCE_SHA256, policy=POLICY):
     require(policy in {"nucle-preparation-v1", POLICY}, "Unknown preparation policy")
-    output = Path(output) if output is not None else (V1_OUTPUT if policy == "nucle-preparation-v1" else DEFAULT_OUTPUT)
+    output = Path(output) if output is not None else (LEGACY_OUTPUT if policy == "nucle-preparation-v1" else DEFAULT_OUTPUT)
     require(not Path(output).exists(), f"Output already exists: {output}; use --output with a new directory")
     inputs = {name: Path(path).resolve() for name, path in
               (("source", source), ("annotations", annotations), ("audit", audit),
@@ -371,7 +411,7 @@ def main():
     parser.add_argument("--policy", choices=("v1", "v2"), default="v2")
     args = parser.parse_args()
     args.policy = f"nucle-preparation-{args.policy}"
-    args.output = args.output or (V1_OUTPUT if args.policy.endswith("v1") else DEFAULT_OUTPUT)
+    args.output = args.output or (LEGACY_OUTPUT if args.policy.endswith("v1") else DEFAULT_OUTPUT)
     summary = prepare(**vars(args))
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     print(f"Artifacts: {args.output.resolve()}")

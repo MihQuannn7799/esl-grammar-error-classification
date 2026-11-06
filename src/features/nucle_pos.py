@@ -30,9 +30,9 @@ MODEL_URL = (
     "en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"
 )
 MODEL_WHEEL_SHA256 = "1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85"
-PREPARED_DIR = DATA_ROOT / "processed" / "nucle_preparation_v2"
+PREPARED_DIR = DATA_ROOT / "processed" / "nucle_preparation"
 SPLIT_DIR = DATA_ROOT / "split" / "nucle_group_split"
-DEFAULT_OUTPUT = PROJECT_ROOT / "reports" / "nucle_pos_baseline_v1"
+DEFAULT_OUTPUT = PROJECT_ROOT / "reports" / "nucle_pos_baseline"
 NA = "NOT_APPLICABLE"
 MISSING = "POS_MISSING"
 LABEL_ORDER = tuple(TARGET_LABELS)

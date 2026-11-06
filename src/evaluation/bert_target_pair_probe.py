@@ -15,7 +15,7 @@ def run():
     with (ROOT/'data_set/split/nucle_group_split/split_manifest.csv').open(encoding='utf-8-sig',newline='') as f:
         train={r['sample_id'] for r in csv.DictReader(f) if r['partition']=='train'}
     grouped=defaultdict(list)
-    with (ROOT/'data_set/processed/nucle_preparation_v2/samples.jsonl').open(encoding='utf-8') as f:
+    with (ROOT/'data_set/processed/nucle_preparation/samples.jsonl').open(encoding='utf-8') as f:
         for line in f:
             r=json.loads(line)
             if r['sample_id'] in train: grouped[r['sentence']].append(r)

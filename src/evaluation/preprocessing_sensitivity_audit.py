@@ -12,6 +12,8 @@ from src.models.nucle_logistic import fit_logistic
 from src.evaluation.nucle_span_analysis import metric, LABELS
 
 OUT=ROOT/'reports/contextual_model_validation/audit'
+PREPARATIONS = {'v1': 'nucle_preparation_legacy', 'v2': 'nucle_preparation'}
+PREDICTIONS = {'v1': 'legacy_validation_predictions.csv', 'v2': 'validation_predictions.csv'}
 def dump(p,obj): p.write_text(json.dumps(obj,ensure_ascii=False,indent=2),encoding='utf-8')
 def csvread(p):
     with p.open(encoding='utf-8-sig',newline='') as f: return list(csv.DictReader(f))
@@ -23,7 +25,7 @@ def run():
     keep=set(train+val); versions={}; nlp=load_tagger(); results={}; parsed={}
     for v in ('v1','v2'):
         rows={}
-        with (ROOT/f'data_set/processed/nucle_preparation_{v}/samples.jsonl').open(encoding='utf-8') as f:
+        with (ROOT/'data_set/processed'/PREPARATIONS[v]/'samples.jsonl').open(encoding='utf-8') as f:
             for line in f:
                 r=json.loads(line)
                 if r['sample_id'] in keep: rows[r['sample_id']]=r
@@ -45,7 +47,7 @@ def run():
         pp={s:pos.predict(aligned[s]) for s in val}
         result={'macro':metric(val,rows,pred,LABELS),'pos_macro':metric(val,rows,pp,LABELS),'dimension':len(enc.feature_names),'convergence':diag,'alignment_counts_validation':dict(Counter(aligned[s]['span_alignment'] for s in val)),'token_count_mismatch_ids':token_mismatch,'offset_failures':offset_fail,'test_scored':False}
         results[v]=result; versions[v]=rows
-        with (OUT/f'{v}_validation_predictions.csv').open('w',encoding='utf-8',newline='') as f:
+        with (OUT/PREDICTIONS[v]).open('w',encoding='utf-8',newline='') as f:
             wr=csv.DictWriter(f,fieldnames=['sample_id','error_type','lr','pos']); wr.writeheader()
             for s in val: wr.writerow(dict(sample_id=s,error_type=rows[s]['error_type'],lr=pred[s],pos=pp[s]))
         if v=='v2': parsed=docs; v2pred=pred; v2aligned=aligned
@@ -54,10 +56,10 @@ def run():
     for s in keep: assert versions['v1'][s]['error_type']==versions['v2'][s]['error_type']
     results['changed_counts']={p:sum(split[s]==p for s in changed) for p in ('train','validation')}
     results['method']='Fixed LR C=0.1, class_weight=None; refit train-only encoder per preparation; same locked IDs/split; no retuning.'
-    old={r['sample_id']:r['best_lr'] for r in csvread(ROOT/'reports/nucle_feature_benchmark_solver_v2/validation_predictions.csv')}
+    old={r['sample_id']:r['best_lr'] for r in csvread(ROOT/'reports/nucle_feature_benchmark/validation_predictions.csv')}
     results['v2_reproduction_prediction_disagreements']=sum(v2pred[s]!=old[s] for s in val)
     for v in ('v1','v2'):
-        preds={r['sample_id']:r['lr'] for r in csvread(OUT/f'{v}_validation_predictions.csv')}
+        preds={r['sample_id']:r['lr'] for r in csvread(OUT/PREDICTIONS[v])}
         for name,ids in [('changed',[s for s in val if s in changed]),('unchanged',[s for s in val if s not in changed])]:
             results[v][name]=metric(ids,versions[v],preds,LABELS)
         signatures={}
@@ -75,6 +77,6 @@ def run():
         packet.append({'sample_id':s,'annotation_id':r['annotation_id'],'gold':r['error_type'],'prediction':old[s],'sentence':r['sentence'],'span':r['error_span'],'start':r['error_start'],'end':r['error_end'],'alignment':v2aligned[s],'parse':[{'i':t.i,'text':t.text,'pos':t.pos_,'dep':t.dep_,'head':t.head.i,'morph':str(t.morph)} for t in doc]})
     dump(OUT/'private_audit_packet.json',packet)
     results['audit_sample_ids']=selected
-    results['input_sha256']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'data_set/split/nucle_group_split/split_manifest.csv',ROOT/'data_set/processed/nucle_preparation_v1/samples.jsonl',ROOT/'data_set/processed/nucle_preparation_v2/samples.jsonl']}
+    results['input_sha256']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'data_set/split/nucle_group_split/split_manifest.csv',ROOT/'data_set/processed/nucle_preparation_legacy/samples.jsonl',ROOT/'data_set/processed/nucle_preparation/samples.jsonl']}
     dump(OUT/'summary.json',results)
 if __name__=='__main__': run()
