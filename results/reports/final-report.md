@@ -628,7 +628,7 @@ Full-minus-D aliases S+L+P+M for each model; pipeline names do not count distinc
 | src/data/nucle_sgml.py, parse_nucle.py | SGML parsing, annotation table, offset checks |
 | data_understanding.py, data_quality.py | Statistics and missing/no-op/overlap/duplicate quality checks |
 | prepare_nucle.py, sentence_boundaries.py, boundary_challenges.py | Preparation v1/v2, invariants, boundary flags |
-| group_split_nucle.py, compare_preparation.py | Connected-group split and preparation comparison |
+| group_split_nucle.py | Connected-group split |
 | src/features/nucle_pos.py, nucle_features.py | POS baseline and train-only S/L/P/M/D encoding |
 | src/models/nucle_logistic.py, nucle_tree.py | Sparse LR and deterministic Gini Tree |
 | src/training/nucle_benchmark.py, nucle_ablation.py, nucle_final_selection.py | Grid, ablation, refit, validation selection, locking |
