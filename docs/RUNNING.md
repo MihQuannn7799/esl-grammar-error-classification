@@ -1,159 +1,222 @@
 # Running the project
 
-This guide is the single source for installation, workflow, command-line options, and usage of every public file. The [README](../README.md) provides the project overview and clone instructions.
+Run all shell commands from the **repository root**, the directory containing `pyproject.toml`, `uv.lock`, and `src/`. Commands below work in PowerShell and Bash without activating a virtual environment. Python code blocks belong in a Python session, not directly in the shell.
 
-Run shell commands from the repository root in a Git checkout. `uv run --no-sync` uses the environment installed below without removing optional packages added afterward.
+Choose the workflow that matches your available inputs:
 
-| Goal | Section |
-|---|---|
-| Install dependencies | [1. Environment](#1-install-the-environment) |
-| Verify the public checkout | [2. Tests](#2-run-tests-without-the-research-corpus) and [3. Demo](#3-run-the-synthetic-demonstration) |
-| Understand research prerequisites | [4. Research data](#4-research-data-requirements) |
-| Prepare classical experiments | [5. Classical workflow](#5-train-classical-baselines-and-models) |
-| Prepare and run BERT | [6. BERT workflow](#6-run-a-new-bert-small-experiment) |
-| Interpret evaluation/replay limits | [7. Evaluation boundaries](#7-evaluation-boundaries) |
-| Inspect automated checks | [8. CI](#8-continuous-integration) and [9. Checkout](#9-clean-checkout-and-line-endings) |
-| Find any file's command or API example | [10. File-by-file reference](#10-file-by-file-reference) |
+| Goal | Required inputs | Follow |
+|---|---|---|
+| Try the code or run synthetic tests | Git checkout and installed dependencies | Sections 1–3 |
+| Prepare the research corpus | Your local NUCLE SGML file | Section 4 |
+| Train classical models on train/validation | Section 4 outputs and the base environment | Section 5 |
+| Train, select, and test a new BERT experiment | Section 4 outputs, BERT dependencies, and local pretrained weights | Section 6 |
+| Run diagnostics or inspect historical tools | The specific experiment artifacts listed for each tool | Section 7 |
+| Find a file's CLI, API, test, or artifact usage | See each entry's requirements | Section 10 |
+
+The public checkout contains code, synthetic examples/tests, and saved aggregate results. It does not contain NUCLE text, prepared samples, fitted vocabularies, row-level research predictions, or task checkpoints. Passing tests or running the demo does not reproduce the published NUCLE scores.
 
 ## 1. Install the environment
 
-Requires Git and [uv](https://docs.astral.sh/uv/getting-started/installation/). Initial installation needs network access.
+Install Git and [uv](https://docs.astral.sh/uv/getting-started/installation/), then open a shell at the repository root. Use a Git clone with a committed `HEAD`: preparation records the commit, and its integration tests also need that metadata.
 
-```bash
+### 1.1. Install the base dependencies
+
+```shell
 uv sync --locked --python 3.13.7
 ```
 
-The base lock installs PyTorch, spaCy 3.8.7, its English model package, pandas, pytest, and the other classical dependencies. The historical baseline used Windows, Python 3.13.7, and 10 CPU threads; BERT used 4 threads. Cross-platform bitwise equivalence is not claimed.
+This creates the repository's `.venv` and installs the locked project dependencies plus the default dev group, including pytest. The base environment includes PyTorch, spaCy 3.8.7, and `en_core_web_sm` 3.8.0. Initial installation needs network access. The Python patch version above is explicit; `.python-version` itself specifies only `3.13`.
 
-To enable BERT training and all BERT-dependent synthetic tests:
+### 1.2. Add BERT support when needed
 
-```bash
+Skip this step for classical training and the demo. Install it for BERT training or BERT-dependent tests:
+
+```shell
 uv pip install --python .venv -r requirements-bert.txt
 ```
 
-The base lock does not lock every transitive dependency of this optional installation. No document-export packages are required; no src/reporting package is distributed.
+`requirements-bert.txt` pins `transformers==4.57.6`; its additional transitive dependencies are not all pinned by the base lock. Run project commands with `uv run --no-sync` after installing it. A later `uv sync` can remove packages outside the base lock; reinstall this optional requirement if you sync again.
+
+### 1.3. Verify the interpreter and spaCy model
+
+```shell
+uv run --no-sync python -c "import sys, spacy; print(sys.version); print(spacy.__version__); print(spacy.load('en_core_web_sm').meta['version'])"
+```
+
+Expected: Python 3.13.7, spaCy 3.8.7, and model version 3.8.0. The checks below use this environment; no separate report-generation environment is needed.
 
 ## 2. Run tests without the research corpus
 
-```bash
+```shell
 uv run --no-sync python -m pytest tests -q -ra
 ```
 
-Tests use synthetic SGML, feature dictionaries, and tiny random BERT models. Downloader tests mock HTTP. Without transformers, BERT-dependent modules are skipped. The licensed boundary-fixture module is also skipped because its fixture is not distributed. See [test scope](../tests/README.md) and the [individual test commands](#g-individual-tests).
+The tests use synthetic SGML, features, and tiny locally initialized BERT models. Downloader tests mock HTTP. BERT-dependent tests skip when `transformers` is absent; the real NUCLE boundary-fixture module skips when its excluded fixture is absent. Installing the optional BERT requirement enables those BERT tests without downloading pretrained weights.
+
+Use [tests/README.md](../tests/README.md) for scope and [individual test commands](#g-individual-tests) to run one module. A passing synthetic suite checks code behavior; it does not run the research benchmark.
 
 ## 3. Run the synthetic demonstration
 
-```bash
+```shell
 uv run --no-sync python -m examples.synthetic_demo
 ```
 
-The demo uses hand-written known-span examples, the actual S/L/P/M/D feature extractor, train-only encoder, and sparse LR. It prints predictions against a small held-out set and writes no files. Its score is not a NUCLE benchmark. The [demo entry](#a-public-demo) identifies the source file.
+The demo uses hand-written sentences with known error spans, the real S/L/P/M/D feature extractor, a train-fitted encoder, and sparse Logistic Regression. It prints held-out toy predictions and metrics, and writes no files. It needs the base spaCy model, but neither NUCLE nor BERT weights.
 
 ## 4. Research data requirements
 
-Obtain NUCLE independently under its applicable access terms. This repository does not supply corpus text, corrections, prepared examples, per-sample predictions, vocabularies, or task checkpoints. Preparation requires matching annotation and quality artifacts generated from the source. It does not read an overlap-review log or add overlap-review statuses to prepared records.
+For research training, complete the steps below in order. Use a new experiment checkout or unused output paths: preparation and split refuse existing output directories. Keep corpus text and derived artifacts under the ignored `data_set/` and `reports/` directories; published aggregate CSVs under `results/` are not training inputs.
 
-The canonical local paths used by the commands in this guide are:
+### 4.1. Place the source file and verify its identity
+
+Obtain NUCLE under its applicable access terms and place the SGML file at:
 
 ```text
 data_set/raw/nucle3.2.sgml
-data_set/interim/nucle_errors.csv
-data_set/processed/nucle_preparation/
-data_set/split/nucle_group_split/
-data_set/features/nucle_features/
-reports/nucle_annotation_audit.csv
-reports/nucle_duplicate_content.json
-reports/nucle_pos_baseline/
-reports/nucle_feature_benchmark/
-reports/nucle_feature_ablation/
 ```
 
-Artifact paths use plain names without version suffixes. These local paths are ignored by Git; published aggregates live separately in `results/`. If you have artifacts from an older checkout, regenerate them at the paths above for a new experiment. Keep historical locked experiments with their original checkout and paths. The optional old-boundary policy writes to `data_set/processed/nucle_preparation_legacy/`, so it cannot overwrite the current preparation.
+If you want to use the repository's downloader instead, run it explicitly:
 
-Follow the commands in [B](#b-data-preparation-scripts): download or restore the source, run understanding and quality checks, prepare samples, then split connected groups. Complete those stages before starting either training workflow below.
+```shell
+uv run --no-sync python -m src.data.data_download
+```
 
-Use a fresh experiment checkout for the canonical sequence. Stages that reject existing outputs require a new directory or checkout. If you choose custom output paths, update every dependent argument/configuration; historical scripts with fixed paths will not discover outputs named pos_new, benchmark_new, or ablation_new automatically. Preserve earlier results rather than overwriting them.
+The downloader fetches its configured URL or skips an existing file. It has no command-line options, does not verify the source checksum, and does not establish the dataset release from its filename. If access fails, obtain the file separately and place it at the path above.
 
-Preparation expects a specific source checksum and matching annotation/audit inputs. Filenames do not establish the release. New manifests use schema version 3, without the old review-log input or overlap-review status fields. Source, annotation, audit, code, and output hashes are still recorded. Historical manifests and locks are not interchangeable with these new outputs; a different source or code revision constitutes a new experiment, not an exact historical replay.
+Print the actual checksum:
+
+```shell
+uv run --no-sync python -c "from pathlib import Path; import hashlib; print(hashlib.sha256(Path('data_set/raw/nucle3.2.sgml').read_bytes()).hexdigest())"
+```
+
+The default preparation command expects this source SHA-256:
+
+```text
+8441a60060730bdc6af1e79a064c68441ecb24a66da91ea2aab0061a64a130ac
+```
+
+The research split runner also requires exactly **1,397 essays**. Although preparation accepts `--expected-source-sha256` for another verified source, changing that argument alone does not adapt the complete workflow to another dataset. A checksum or inventory mismatch needs investigation before continuing.
+
+### 4.2. Export annotations
+
+```shell
+uv run --no-sync python -m src.data.data_understanding --input data_set/raw/nucle3.2.sgml --csv data_set/interim/nucle_errors.csv --report reports/data_understanding.md
+```
+
+This parses the SGML and writes the annotation CSV and overview. Check that both output files exist. It does not construct training sentences or split the dataset. Reusing these output filenames replaces them.
+
+### 4.3. Generate quality and duplicate evidence
+
+```shell
+uv run --no-sync python -m src.data.data_quality --input data_set/raw/nucle3.2.sgml --csv data_set/interim/nucle_errors.csv --output-dir reports --report reports/nucle_data_quality.md --release unverified
+```
+
+Read `reports/nucle_data_quality.md`. In `reports/nucle_data_quality.json`, check that `csv_comparison.status` is `match`. The command also creates `nucle_annotation_audit.csv` and `nucle_duplicate_content.json` under `reports/`; the next two stages consume those files. `--release unverified` records that no release identifier has been established; use a verified identifier when you have one. Reusing output filenames replaces them.
+
+### 4.4. Prepare known-span samples
+
+```shell
+uv run --no-sync python -m src.data.prepare_nucle --source data_set/raw/nucle3.2.sgml --annotations data_set/interim/nucle_errors.csv --audit reports/nucle_annotation_audit.csv --output data_set/processed/nucle_preparation
+```
+
+The default policy is `v2`, using the text-only boundary repairs. Preparation validates source, annotation CSV, and quality-audit inputs. It needs no private overlap-review log or `--review` argument. The quality audit can contain review fields, but preparation does not copy overlap-review statuses into the prepared records.
+
+Check `data_set/processed/nucle_preparation/` for `samples.jsonl`, `sentences.jsonl`, `provenance.jsonl`, `summary.json`, `manifest.json`, and `manifest.sha256`. The manifest records input/code hashes and Git `HEAD`, with schema version 3. This stage does not split data or fit a model.
+
+The `v1`/`v2` policy identifiers describe algorithms; they are separate from artifact directory names. Only an optional preprocessing-sensitivity experiment needs the old policy: repeat the command above with `--policy v1 --output data_set/processed/nucle_preparation_legacy`. Keep the normal preparation unchanged for the main workflow.
+
+### 4.5. Split connected groups
+
+```shell
+uv run --no-sync python -m src.data.group_split_nucle --source data_set/raw/nucle3.2.sgml --prepared data_set/processed/nucle_preparation --duplicate-report reports/nucle_duplicate_content.json --output data_set/split/nucle_group_split --seed 20261013
+```
+
+This groups related essays/model inputs and assigns each connected group to one partition. Inspect **`data_set/split/nucle_group_split/split_summary.json`** for `partitions`, sample counts, and label counts. Other outputs include `split_manifest.csv`, `essay_groups.csv`, grouping evidence, and `manifest.json`. The split directory does not contain a file named `summary.json`.
+
+The saved study used 11,052 train, 2,368 validation, and 2,368 test samples. These counts are also declared in the supplied BERT config. Check your generated split rather than assuming those values; changed data, policy, or split settings define a different experiment.
+
+### 4.6. Choose the training branch
+
+Both branches start from `data_set/processed/nucle_preparation/samples.jsonl` and `data_set/split/nucle_group_split/split_manifest.csv`:
+
+- For POS, LR, Tree, and feature ablations, continue with section 5.
+- For BERT, continue with section 6. Classical feature extraction and classical model training are not BERT prerequisites.
 
 ## 5. Train classical baselines and models
 
-Use this workflow for the POS baseline, Logistic Regression (LR), Decision Tree, and feature ablations. Install the base environment in section 1 first. No BERT download is needed for these stages.
+Complete section 4 and install the base environment first. Keep the canonical paths below when running the full ablations or fixed-path diagnostics. POS baseline fitting is independent of feature extraction; both are needed by some later diagnostics.
 
-### 5.1. Check preparation and split inputs
+### 5.1. Fit the POS baseline
 
-Complete the [data preparation steps](#b-data-preparation-scripts) in order: understanding, quality, preparation, and connected-group split. Before training, confirm that these files exist:
-
-| Required input | Produced by |
-|---|---|
-| `data_set/processed/nucle_preparation/samples.jsonl` and `manifest.json` | `src.data.prepare_nucle` |
-| `data_set/split/nucle_group_split/split_manifest.csv` and `summary.json` | `src.data.group_split_nucle` |
-
-Use the same preparation and split throughout the experiment. Training reads the train and validation partitions; the commands below do not score test. Output directories must be new. If a stage refuses an existing directory, preserve that run and use a separate experiment checkout or update its output and every downstream input together.
-
-### 5.2. Fit the POS baseline
-
-This baseline learns the label associated with POS signatures from train, then evaluates validation. It is a useful reference before fitting the full feature models.
-
-```bash
+```shell
 uv run --no-sync python -m src.features.nucle_pos --prepared data_set/processed/nucle_preparation --split data_set/split/nucle_group_split --output reports/nucle_pos_baseline
 ```
 
-Check `reports/nucle_pos_baseline/summary.json` for validation metrics. The same directory contains `pos_by_label_train.csv` and `validation_predictions.csv`. Keep it for later span analysis and historical final selection.
+This fits POS-signature label rules on train and evaluates validation. Inspect `reports/nucle_pos_baseline/summary.json`: validation scores are under `pos_rule_validation` and `majority_baseline_validation`. The directory also contains `pos_by_label_train.csv` and `validation_predictions.csv`. This stage does not parse or score the test partition.
 
-### 5.3. Extract features and fit the train-only encoder
+### 5.2. Extract features and fit the encoder
 
-This step builds the S/L/P/M/D features and fixes vocabulary/column order using train only. It prepares model inputs; it does not train LR or Tree.
-
-```bash
+```shell
 uv run --no-sync python -m src.features.nucle_features --prepared data_set/processed/nucle_preparation --split data_set/split/nucle_group_split --output data_set/features/nucle_features
 ```
 
-Confirm `features.jsonl`, `targets.jsonl`, `encoder.json`, and `manifest.json` exist in `data_set/features/nucle_features/`. The next two stages consume this directory and the same split.
+This parses sentences and writes encoded `features.jsonl`, `targets.jsonl`, `encoder.json`, and `manifest.json`. The vocabulary and column order are fitted on train only; the fixed encoder then transforms all partitions, including test. Feature extraction therefore processes test sentences, but it does not train on them or compute test performance.
 
-### 5.4. Train and compare full LR and Decision Tree
+Inspect the manifest's `partition_counts` and `feature_dimension`, and the encoder's `fit_partition`, which must be `train`. These outputs are the inputs to the next two steps.
 
-The benchmark fits its declared hyperparameter grids on train and selects configurations using validation Macro-F1.
+### 5.3. Train the full LR and Decision Tree benchmark
 
-```bash
+```shell
 uv run --no-sync python -m src.training.nucle_benchmark --features data_set/features/nucle_features --split data_set/split/nucle_group_split --output reports/nucle_feature_benchmark
 ```
 
-Read `reports/nucle_feature_benchmark/summary.json`: `selected_by_validation` identifies the chosen LR/Tree configurations, `results` contains the grid scores, and `timing` records runtime. `validation_predictions.csv` contains majority, selected LR, and selected Tree predictions. These are validation results, separate from the published final test scores.
+This fits 8 LR configurations and 12 Tree configurations on train and evaluates validation, alongside the majority baseline. It selects eligible configurations by validation Macro-F1; a non-converged LR candidate is reported but cannot be selected.
 
-### 5.5. Run feature ablations
+Read `reports/nucle_feature_benchmark/summary.json` for `selected_by_validation`, grid `results`, convergence information, and `timing`. A null LR selection means no LR candidate met the convergence guard. `validation_predictions.csv` contains majority, chosen LR, and chosen Tree predictions.
 
-Run this after feature extraction to measure the effect of the declared feature subsets and masking variants. By default it runs all six variants.
+This command saves validation evidence, not reusable LR/Tree task checkpoints or final test scores. It does not offer `--resume` or a test mode.
 
-```bash
+### 5.4. Train feature ablations
+
+```shell
 uv run --no-sync python -m src.training.nucle_ablation --features data_set/features/nucle_features --split data_set/split/nucle_group_split --output reports/nucle_feature_ablation
 ```
 
-Inspect `reports/nucle_feature_ablation/summary.json` for per-variant results, selected configurations, feature counts, and fit count. `validation_predictions.csv` records each variant's predictions. To run just one variant for a separate pilot, add `--variant S+L` and choose a different `--output`; a partial ablation run cannot replace the complete historical evidence.
+By default, this searches LR and Tree grids for all six declared variants: `S+L`, `S+L+P`, `S+L+P+M`, `S+L+P+M+D`, `Full_mask_span_lexical`, and `S+P+M+D_nonlexical`. Check `reports/nucle_feature_ablation/summary.json` for `selected_by_validation`, `variant_feature_counts`, `fit_count`, and grid results. Predictions are in `validation_predictions.csv`.
 
-### 5.6. Decide whether final evaluation is available
+The masked variant reparses train/validation samples from the **fixed** `data_set/processed/nucle_preparation/` directory and fits its own masked encoder. The CLI has no `--prepared` option. Changing `--features` or `--split` does not change that preparation path.
 
-The steps above complete the public classical training workflow. Historical final selection additionally needs the genuine `docs/final_evaluation_protocol.md`, compatible prior summaries/predictions, private checkpoints, and locks. The protocol and original private artifacts are not distributed. Only run the [historical final-selection entry](#srctrainingnucle_final_selectionpy-historical-fixed-paths) in a complete compatible research checkout. For saved study scores, read the [aggregate results index](../results/README.md).
+For an optional single-variant pilot, use a separate output directory:
+
+```shell
+uv run --no-sync python -m src.training.nucle_ablation --features data_set/features/nucle_features --split data_set/split/nucle_group_split --variant S+L --output reports/nucle_ablation_pilot
+```
+
+A partial pilot does not supply the complete six-variant evidence required by historical final selection. Classical training here ends with validation summaries and predictions. The separate historical checkpoint/freeze/test tools have additional requirements in section 7.
 
 ## 6. Run a new BERT-small experiment
 
-The current runner trains span-marked text with CLS or span-mean readout. Classical feature extraction and LR/Tree training are not prerequisites; BERT needs the prepared samples and connected-group split from section 4.
+Use `src.training.bert_small_experiment` for a new experiment. It accepts prepared known-span sentences directly, with CLS or span-mean readout. Complete section 4 and install the optional BERT requirement in section 1 first.
 
-### 6.1. Install BERT support and inspect the config
+### 6.1. Review the configuration
 
-Install the optional dependency using section 1, then open [configs/bert_small_training.json](../configs/bert_small_training.json). Its `samples` and `split` paths must point to your prepared data. The declared counts are 11,052 train, 2,368 validation, and 2,368 test samples.
+Open [configs/bert_small_training.json](../configs/bert_small_training.json). It declares the sample path, split path, pretrained-source metadata path, and expected counts. Compare its `expected_counts` with `split_summary.json` before running.
 
-The default grid has 12 runs: 2 readouts × 2 head learning rates × 3 seeds, with one encoder learning rate. Each run allows up to 20 epochs with patience 4, batch size 32, maximum length 128, CPU device, and 4 threads. This can take substantial time. For a pilot or different counts, copy the JSON to a separate local config and change the declared grid/counts before starting; use that config consistently in `check` and `train`, with a fresh output directory. Do not edit a running or locked experiment.
+The default grid is 2 readouts × 1 encoder learning rate × 2 head learning rates × 3 seeds = **12 runs**. Each allows up to 20 epochs with patience 4. Defaults include batch size 32, maximum length 128, CPU device, and 4 threads. The config supports `cpu`, `cuda`, and `auto`; CUDA needs a compatible PyTorch build and available hardware.
 
-### 6.2. Download pretrained files and record their source
+For a pilot, copy the config to a separate local JSON file, reduce its grid/epochs, and choose a separate experiment output. Use the copied filename in both `check` and `train`. Do not change sample counts just to bypass a data mismatch. The runner requires all five labels in each requested partition, even for a pilot.
 
-The runner loads local files only. Start an interactive Python session from the repository root:
+Relative paths in the BERT config and its `model_source.json` resolve from the repository root, not the config file's directory. The saved experiment config contains absolute paths, so moving a trained experiment to another checkout can invalidate its inputs.
 
-```bash
+### 6.2. Prepare local pretrained files
+
+The runner uses local files only; it does not download missing weights. Start Python from the repository root:
+
+```shell
 uv run --no-sync python
 ```
 
-Paste the following Python code. It downloads the public pretrained model at a pinned revision and creates the metadata file referenced by the config.
+Paste this Python block to download the pinned public pretrained snapshot and write its source metadata:
 
 ```python
 import json
@@ -163,318 +226,197 @@ from huggingface_hub import snapshot_download
 model = "google/bert_uncased_L-2_H-128_A-2"
 revision = "30b0a37ccaaa32f332884b96992754e246e48c5f"
 snapshot_download(repo_id=model, revision=revision, local_dir=".cache/bert-small")
-path = Path("reports/contextual_model_validation/model_source.json")
-path.parent.mkdir(parents=True, exist_ok=True)
-path.write_text(json.dumps({"model": model, "revision": revision,
-                           "path": ".cache/bert-small"}, indent=2), encoding="utf-8")
+metadata = Path("reports/contextual_model_validation/model_source.json")
+metadata.parent.mkdir(parents=True, exist_ok=True)
+metadata.write_text(
+    json.dumps({"model": model, "revision": revision, "path": ".cache/bert-small"}, indent=2),
+    encoding="utf-8",
+)
 ```
 
-Leave Python with `exit()` before running the shell commands below. Confirm `.cache/bert-small/` and `reports/contextual_model_validation/model_source.json` exist. These pretrained files are the starting weights, separate from the task checkpoints produced by training.
+Enter `exit()` to return to the shell. Confirm `.cache/bert-small/` contains the model/tokenizer files and that `model_source.json` exists at the path in your config. These are starting weights; task checkpoints are created later by training. Preserve the source directory and metadata throughout the run.
 
-### 6.3. Check inputs before training
+### 6.3. Run preflight checks
 
-```bash
+```shell
 uv run --no-sync python -m src.training.bert_small_experiment check --config configs/bert_small_training.json
 ```
 
-This validates train/validation inputs and runs small forward passes without training. Resolve missing files, count mismatches, or tokenizer/model errors before continuing. The runner does not download missing pretrained files automatically.
+This validates partition IDs/counts, checks available grouping metadata, tokenizes train/validation, and runs two-example forwards for the configured readouts. It prints data audits and the number of planned runs. It performs no training or test scoring. Resolve reported file, count, class, or tokenizer errors before proceeding.
 
-### 6.4. Train the declared grid
+### 6.4. Train the grid
 
-Choose a new experiment directory; the example below uses `reports/bert_new/`.
+Use an output directory that does not already exist:
 
-```bash
+```shell
 uv run --no-sync python -m src.training.bert_small_experiment train --config configs/bert_small_training.json --output reports/bert_new
 ```
 
-Training fits on train and evaluates validation. The experiment directory contains `manifest.json`, `config.json`, and `data_audit.json`; each run has history/learning-curve files, `summary.json`, best checkpoint files under `best/`, validation predictions, and resume state. Wait for every declared run to finish before selection. Inspect histories and validation scores to check training progress; test is not scored here.
+The runner trains on train, evaluates train/validation, and selects each run's best checkpoint using validation. `reports/bert_new/` contains `manifest.json`, `config.json`, and `data_audit.json`. Each completed run contains `history.json`, `history.csv`, `learning_curves.png`, `best/`, `best_metrics.json`, `validation_predictions.csv`, `last.pt`, and `summary.json`.
 
-### 6.5. Resume only if training was interrupted
+Inspect the learning curves and each run's `best_epoch`, `stop_reason`, and validation metrics. Completion requires a summary for every declared run. No test metrics are produced at this step.
 
-Skip this step after a successful train. To continue the same interrupted, unlocked experiment:
+### 6.5. Resume an interrupted run only when necessary
 
-```bash
+Skip this step if training finished. To continue an interrupted experiment at the same output path:
+
+```shell
 uv run --no-sync python -m src.training.bert_small_experiment train --config configs/bert_small_training.json --output reports/bert_new --resume
 ```
 
-Keep the same output, config, data, pretrained source, and code revision. Resume verifies the saved manifest and rejects changed inputs or an experiment already locked by selection. Start a new experiment directory when intentionally changing those inputs.
+Resume checks configuration, input/pretrained hashes, tracked training code, and the recorded environment against the saved manifest. It restores saved training state where available and verifies/skips completed runs. Keep the same inputs, code, environment, and paths. Selection locks prevent further resumed training. Intentional changes require a new experiment directory.
 
-### 6.6. Select with validation and lock checkpoints
+### 6.6. Select by validation and lock the result
 
-Once all declared runs are complete:
+After all declared runs finish:
 
-```bash
+```shell
 uv run --no-sync python -m src.training.bert_small_experiment select --experiment reports/bert_new
 ```
 
-This chooses the configuration with the highest mean validation Macro-F1 across its declared seeds, fixes the first configured seed as primary, and creates `selection.json` plus `selection.sha256`. Inspect the ranking in `selection.json`. Selection requires every grid run and records checkpoint hashes; preserve the locked artifacts for test.
+Selection requires all declared runs and unchanged tracked training code. It chooses the configuration with highest mean best-checkpoint validation Macro-F1 across seeds; declared grid order breaks ties. The first configured seed is primary, independently of test performance. Inspect `selection.json` for the ranking and selected runs; `selection.sha256` records its checksum, and the selection records the chosen checkpoint hashes.
 
-### 6.7. Score the locked selection on test
+### 6.7. Score the locked checkpoints on test
 
-```bash
+```shell
 uv run --no-sync python -m src.training.bert_small_experiment test --selection reports/bert_new/selection.json --output reports/bert_new/test
 ```
 
-The runner verifies the lock, inputs, code, and checkpoints, then scores all seeds of the selected configuration without refitting. Read `reports/bert_new/test/summary.json` for mean test Macro-F1/accuracy and seed standard deviations, and `per_class_metrics.csv` for label-level results. Per-run test metrics and predictions stay local. Test output must be new; do not choose a configuration or seed based on these test results.
+This verifies the selection, saved manifest, tracked training code, data/metadata hashes, and chosen checkpoint files before test scoring. It evaluates every seed of the selected configuration without refitting. Read `reports/bert_new/test/summary.json` for test Macro-F1/accuracy means and seed standard deviations, and `per_class_metrics.csv` for label-level scores. Per-run test metrics/predictions remain local. The test output directory must not already exist.
 
-The [BERT CLI reference](#d-bert-training) lists supported options and the separate historical five-epoch CLS runner. Evaluation interpretation and historical replay limits follow below.
+Seed standard deviation measures training-seed variation; it is not a group-bootstrap confidence interval. The standalone BERT workflow does not require classical checkpoints and does not run the historical cross-model analysis automatically.
 
 ## 7. Evaluation boundaries
 
-Choose configurations/checkpoints with validation and freeze before test. Published models retain train-fitted weights; no train+validation refit is reported. The BERT extension used a test already seen for classical models; this is not independent external validation.
+Choose configurations with validation, lock the choice, then score test. The published study did not refit on train+validation. The BERT extension reused a test split already seen during classical evaluation; its results are not independent external validation. Read [RESULTS.md](RESULTS.md) for interpretation and [results/README.md](../results/README.md) for saved aggregate evidence.
 
-Paired bootstrap requires the same resampled connected groups for every model. Training-seed standard deviation and bootstrap CI answer different questions. Public aggregates support inspection; recomputing the original paired bootstrap requires excluded row-level predictions and group metadata.
+### 7.1. Current validation slice analysis
 
-Historical lock verification checks the original source/artifact snapshot. This curated export omits reporting modules and private inputs, so it cannot satisfy that lock by itself. Follow [E](#e-evaluation-and-diagnostics) for each evaluator's requirements. Do not create placeholder artifacts or change recorded hashes to bypass guards.
+After the POS baseline and the complete ablation run, you can inspect span/POS slices:
+
+```shell
+uv run --no-sync python -m src.evaluation.nucle_span_analysis --output reports/nucle_span_diagnostics
+```
+
+Its input paths are fixed: canonical preparation/split, `reports/nucle_pos_baseline/`, and `reports/nucle_feature_ablation/`. It reads `split_summary.json` and `essay_groups.csv` as well as predictions/summaries. It writes `summary.json` and `metrics.csv` to a new output directory, without training or test scoring. Its only CLI option is `--output`.
+
+### 7.2. Historical selection and evaluation
+
+These are separate tools for a complete research workspace. They are not required by sections 4–6, and a public clone lacks some required protocols/evidence. Old locks record their original source/artifact paths and hashes; a newly prepared dataset or a directory rename does not make it compatible with an old lock.
+
+| Tool | Invocation after `uv run --no-sync python -m` | Required evidence and behavior |
+|---|---|---|
+| Classical final selection | `src.training.nucle_final_selection` | Canonical features/preparation/split, complete POS/ablation evidence, and genuine `docs/final_evaluation_protocol.md`. Performs 40 new grid fits and 12 prior-configuration refits, requires prediction replay, and creates checkpoints plus selection evidence under `reports/final_evaluation/`. It creates the checkpoints; pre-existing final checkpoints or locks are not inputs to this fitting stage. |
+| Freeze classical selection | `src.training.nucle_final_selection --freeze` | Completed, reviewed selection outputs; creates `lock.json`/`lock.sha256`. Run separately after selection. |
+| Classical test | `src.evaluation.nucle_final_evaluation score` | Compatible frozen selection, code, and inputs; scores exactly 2,368 test samples once at its fixed paths. |
+| Classical bootstrap | `src.evaluation.nucle_final_evaluation bootstrap` | Valid lock and saved classical test predictions; writes group-resampling weights, confidence intervals, and aggregate tables. Can replace those derived outputs. |
+| Classical checkpoint replay | `src.evaluation.nucle_final_evaluation replay` | Valid lock, checkpoints, saved test encodings/predictions; verifies frozen inference and writes `checkpoint_replay.json`. |
+| Historical five-epoch CLS pilot | `src.training.bert_span_classifier --pilot` | Canonical preparation/split and local pretrained metadata/files; optimizes up to 20 train batches and writes `reports/contextual_model_validation/bert/pilot.json`. |
+| Historical five-epoch CLS search | `src.training.bert_span_classifier --train` | Same inputs plus genuine `docs/bert_experiment_protocol.md`; writes historical run checkpoints, validation histories/predictions, and selection. It has no test mode. |
+| Historical CLS replay | `src.evaluation.bert_checkpoint_verification` | Historical CLS selection/checkpoints, tokenizer/pretrained files, canonical data; verifies validation predictions and re-evaluates train/validation. This is not the current span-mean checkpoint loader. |
+| Historical learning probes | `src.evaluation.bert_learning_diagnostics` | Historical CLS artifacts and genuine `docs/bert_learning_diagnostics_protocol.md`; train-only 100-example optimization/gradient probes in a new `reports/bert_learning_diagnostics/` directory. |
+| Same-sentence target probe | `src.evaluation.bert_target_pair_probe` | Historical CLS primary checkpoint, train samples/split, and an existing diagnostics directory; writes `same_sentence_pairs.json`, refusing to replace that file. |
+| Preprocessing sensitivity | `src.evaluation.preprocessing_sensitivity_audit` | Old-policy/current preparations with matching IDs, canonical split, and benchmark validation predictions. Refits train-only LR/POS and evaluates validation; creates `reports/contextual_model_validation/audit/`, including `legacy_validation_predictions.csv` and `validation_predictions.csv`. |
+| LR thread sensitivity | `src.evaluation.logistic_thread_sensitivity` | Canonical features/split, benchmark predictions, and the preceding audit's `validation_predictions.csv`; refits train-only LR with 4/10 threads and writes `thread_diagnostic.json`. |
+
+The downloader, classical final-selection runner, positional classical evaluator, and fixed-path probes do not share an argparse interface. Use only the invocations documented for them: for example, passing `--help` to `nucle_final_selection` starts its fitting branch.
+
+### 7.3. Historical BERT/classical analysis
+
+`src.evaluation.bert_final_analysis` is an analysis tool, not an extra BERT training step. It requires the tested BERT experiment, compatible classical lock/test predictions, bootstrap weights/results, `reports/evaluation_followup/reviewed_overall_results.csv`, and source samples for its private audit. A new BERT run or public aggregate CSVs alone do not supply those inputs.
+
+In a compatible complete research workspace, use the same BERT experiment path that was tested:
+
+```shell
+uv run --no-sync python -m src.evaluation.bert_final_analysis --experiment reports/bert_new --output reports/bert_analysis_new
+```
+
+It verifies saved evidence and writes tables, figures, paired group-bootstrap comparisons, and a local private audit packet to a new output directory. It does not run checkpoint inference or train models. Original paired bootstrap comparisons require row-level predictions and matching group IDs; the public aggregate tables cannot reconstruct them.
 
 ## 8. Continuous integration
 
-The [CI workflow](../.github/workflows/ci.yml) uses the installation commands in section 1, the test command in section 2, and the demo command in section 3 on Windows and Linux. It also checks the working tree immediately after checkout. There is no separate CI-only installation recipe.
+The [CI workflow](../.github/workflows/ci.yml) runs on Windows and Linux. It checks the checkout against `HEAD`, installs the base environment and optional BERT requirement, then runs the synthetic suite and demo. Use the live GitHub Actions run to check its status.
 
-CI does not download NUCLE or pretrained task weights, rerun the research benchmark, or adjudicate labels.
+CI does not obtain NUCLE, download pretrained research weights, or rerun the full research benchmark. A local verification run and a CI run are separate results.
 
 ## 9. Clean checkout and line endings
 
-Repository text files use LF line endings, enforced by .gitattributes. No global Git configuration change is required. Check a fresh clone with `git status --short`. CI runs `git diff --exit-code HEAD --` before installing dependencies.
+Text files use LF as configured by `.gitattributes`; no global Git line-ending change is required. Check local changes with:
+
+```shell
+git status --short
+```
+
+Before retrying a failed stage, use its actual error to choose the next action:
+
+| Symptom | What to check |
+|---|---|
+| `src` import fails or files are not found | Run from the repository root using the module commands shown above. |
+| Missing spaCy/model dependency | Complete section 1; use the repository environment rather than an unrelated Python installation. |
+| `No module named transformers` | Install the optional BERT requirement after the most recent base sync. |
+| Source checksum or CSV/audit mismatch | Check the original source; regenerate understanding and quality evidence from that same source before preparation. |
+| Missing split summary | The split filename is `split_summary.json`; `summary.json` belongs to other stages. |
+| Output directory already exists | Keep the recorded run. For a new experiment, choose new output paths; for interrupted BERT training, use the unchanged config/output with `--resume`. Classical runners have no resume mode. |
+| Custom paths break the masked ablation or a diagnostic | Those tools include fixed input paths. Use canonical paths in a separate experiment checkout; changing `--output` alone cannot redirect their inputs. |
+| BERT count/class/group check fails | Compare prepared IDs and `split_summary.json` with the chosen config. Confirm partition membership and all five labels; do not suppress the guard. |
+| Resume or lock verification fails | Check saved config, paths, code, environment, and hashes. Preserve the original experiment; intentional changes need a new run. |
+| Historical protocol/checkpoint/evidence is missing | Use the current workflows or restore the genuine matching research artifacts. Placeholder files do not satisfy the checks. |
+
+New output paths are for new experiments, not a way to retune against an already scored test. Preserve historical experiments with their original checkout, inputs, and locks. New preparation manifests record their current code/input snapshot; they do not claim compatibility with an old research lock.
 
 ## 10. File-by-file reference
 
-This section covers **every Python file and every other public file in this repository**. Execute commands from the repository root. `uv run --no-sync python` uses the environment installed in section 1, including optional BERT dependencies when needed. The commands below describe how to run each tool; they were not all executed on research data while writing this guide.
-
-### Find the right instructions
-
-A command-line entry point performs a workflow when invoked with `python -m ...`. A shared module exposes functions, classes, or constants for another runner to use; executing that file directly is not a substitute for calling its API. Test modules run through pytest, and data/configuration/document files are read by their consuming tools.
-
-| Files or task | Instructions |
-|---|---|
-| Public end-to-end example | [A. Public demo](#a-public-demo) |
-| Data download, understanding, quality, preparation, split | [B. Data preparation scripts](#b-data-preparation-scripts) |
-| Feature extraction, LR/Tree benchmark and ablations | [C. Features and classical training](#c-features-and-classical-training) |
-| Current and historical BERT runners | [D. BERT training](#d-bert-training) |
-| Evaluation, replay and diagnostics | [E. Evaluation and diagnostics](#e-evaluation-and-diagnostics) |
-| Parsers, boundary helpers, metrics, model classes and package files | [F. Shared modules and actual API examples](#f-shared-modules-and-package-files) |
-| Individual test modules | [G. Individual tests](#g-individual-tests) |
-| Configuration, reports, CSVs, figures and repository settings | [H. Other files](#h-configuration-documentation-and-result-files) |
-
-The sections are expanded below. In particular, `src/data/nucle_sgml.py`, `parse_nucle.py`, `sentence_boundaries.py`, `boundary_challenges.py`, `constants.py`, and `__init__.py` are shared modules documented in F; the five runnable data scripts are in B. The import checks in F only confirm availability. The following API examples demonstrate actual parsing, conversion, boundary repair, scoring, and model fitting.
-
-### Inputs and execution order
-
-| Level | Required local inputs | What becomes available |
-|---|---|---|
-| A: public checkout | Git checkout, base dependencies; optional `transformers` for BERT tests | Demo, synthetic tests, library imports, reading reports/results |
-| B: authorized research data | NUCLE SGML plus matching annotation CSV, quality audit, source checksum, and a committed HEAD | Preparation and connected-group split |
-| C: prepared experiment | Level B outputs; train-only features/encoder for classical models; local pretrained model metadata/files for BERT | Validation training, ablations, locked BERT selection/test |
-| H: historical reproduction | Original protocol documents, compatible phase-specific summaries, predictions, checkpoints, manifests, and locks | Fixed-path sensitivity/diagnostic/replay scripts below |
-
-Normal order is **download/restore data -> understanding -> quality review -> preparation -> group split -> features/baselines -> validation training -> lock -> test -> analysis**. The extended BERT runner is the recommended BERT workflow; the five-epoch CLS runner is retained for the historical experiment.
-
-The exact historical review inputs, protocols, row-level predictions, and task checkpoints are not distributed. The normal preparation command does not need them; the historical evaluation tools below have separate requirements. In particular, `docs/bert_experiment_protocol.md`, `docs/bert_learning_diagnostics_protocol.md`, and `docs/final_evaluation_protocol.md` are required by specific historical scripts but absent from this curated export. Restore genuine inputs in a separate complete research checkout for those stages; do not create empty placeholders or change recorded hashes to bypass checks. Follow [RUNNING.md](RUNNING.md) to prepare a local pretrained `model_source.json` for the current BERT runner.
-
-Use fresh output directories where the implementation requires them. Some fixed-path diagnostics write into `reports/`; do not batch-execute every `.py`. **Do not pass `--help` to scripts without argparse:** `nucle_final_selection.py --help` would start its fitting branch, and the downloader does not interpret a help flag.
+Runnable modules are listed below with their options and the workflow that explains inputs/outputs. The shared-module examples, individual tests, and non-executable artifact index follow. Each normal workflow command appears at its point of use above.
 
 ### A. Public demo
 
-#### `examples/synthetic_demo.py`
-
-Run the single demo command in [section 3](#3-run-the-synthetic-demonstration).
-
-Needs base dependencies including spaCy's English package. Runs the actual feature extractor, train-only encoder, and LR on hand-written examples; prints predictions and toy metrics. No corpus/checkpoint download and no output files. The toy score is not a NUCLE benchmark.
+[`examples/synthetic_demo.py`](../examples/synthetic_demo.py) runs with the command in [section 3](#3-run-the-synthetic-demonstration); it has no CLI options and produces no files.
 
 ### B. Data preparation scripts
 
-#### `src/data/data_download.py`
-
-```bash
-uv run --no-sync python -m src.data.data_download
-```
-
-No CLI options. Explicitly downloads the configured NUCLE SGML URL to `data_set/raw/nucle3.2.sgml`, or skips an existing file. Requires network access and appropriate dataset access; if gated, obtain the source independently and place it at that path. No parsing or splitting occurs here.
-
-#### `src/data/data_understanding.py`
-
-```bash
-uv run --no-sync python -m src.data.data_understanding --input data_set/raw/nucle3.2.sgml --csv data_set/interim/nucle_errors.csv --report reports/data_understanding.md
-```
-
-Options: `--input`, `--csv`, `--report`. Reads SGML and exports the annotation CSV plus a Markdown overview. Creates parent directories; output files can be replaced if the same paths are reused.
-
-#### `src/data/data_quality.py`
-
-```bash
-uv run --no-sync python -m src.data.data_quality --input data_set/raw/nucle3.2.sgml --csv data_set/interim/nucle_errors.csv --output-dir reports --report reports/data_quality.md --release unverified
-```
-
-Options: `--input`, `--csv`, `--output-dir`, `--report`, `--release`. Compares source/CSV and writes `nucle_data_quality.json`, `nucle_annotation_audit.csv`, `nucle_duplicate_content.json`, and the requested Markdown report. Use a verified release identifier when available; the example does not infer a release from the filename. The audit CSV is the quality-evidence input used by preparation; no separate overlap-review log is needed. Reusing output paths can replace files.
-
-#### `src/data/prepare_nucle.py`
-
-```bash
-uv run --no-sync python -m src.data.prepare_nucle --source data_set/raw/nucle3.2.sgml --annotations data_set/interim/nucle_errors.csv --audit reports/nucle_annotation_audit.csv --policy v2 --output data_set/processed/nucle_preparation
-```
-
-Options: `--source`, `--annotations`, `--audit`, `--output`, `--expected-source-sha256`, `--policy {v1,v2}`. The default expected checksum is the verified historical source checksum. Requires matching annotation/quality artifacts and spaCy 3.8.7; preserves original offsets and rejects incompatible inputs. No review CSV or `--review` argument is used, and no overlap `review_status` is written to provenance or summary. Creates sample/sentence/provenance JSONL, quality/boundary outputs, summary and hashed manifest in a new directory. It records `git rev-parse HEAD`; it does not split data or train a model.
-
-To build the older policy separately, use the same input arguments and `--policy v1 --output data_set/processed/nucle_preparation_legacy`. A different legitimate source requires its own verified checksum and annotation/audit files generated from that source.
-
-#### `src/data/group_split_nucle.py`
-
-```bash
-uv run --no-sync python -m src.data.group_split_nucle --source data_set/raw/nucle3.2.sgml --prepared data_set/processed/nucle_preparation --duplicate-report reports/nucle_duplicate_content.json --output data_set/split/nucle_group_split --seed 20261013
-```
-
-Options: `--source`, `--prepared`, `--duplicate-report`, `--output`, `--seed`. Requires source, complete preparation, and duplicate evidence. Writes essay-to-group mappings, grouping decisions/policy, sample split manifest, summary, and hashes. Keeps connected groups in one partition and refuses an existing output.
+| File | CLI options | Instructions |
+|---|---|---|
+| [data_download.py](../src/data/data_download.py) | None | [4.1](#41-place-the-source-file-and-verify-its-identity) |
+| [data_understanding.py](../src/data/data_understanding.py) | `--input`, `--csv`, `--report` | [4.2](#42-export-annotations) |
+| [data_quality.py](../src/data/data_quality.py) | `--input`, `--csv`, `--output-dir`, `--report`, `--release` | [4.3](#43-generate-quality-and-duplicate-evidence) |
+| [prepare_nucle.py](../src/data/prepare_nucle.py) | `--source`, `--annotations`, `--audit`, `--output`, `--expected-source-sha256`, `--policy {v1,v2}` | [4.4](#44-prepare-known-span-samples) |
+| [group_split_nucle.py](../src/data/group_split_nucle.py) | `--source`, `--prepared`, `--duplicate-report`, `--output`, `--seed` | [4.5](#45-split-connected-groups) |
 
 ### C. Features and classical training
 
-#### `src/features/nucle_pos.py`
-
-Run the command in [the training walkthrough](#52-fit-the-pos-baseline).
-
-Options: `--prepared`, `--split`, `--output`. Requires prepared samples, group split, and the spaCy English parser. Learns the train POS-signature baseline and evaluates validation; writes summary, train POS/label counts, and validation predictions. Keep its canonical output path when using the historical slice-analysis script below.
-
-#### `src/features/nucle_features.py`
-
-Run the command in [the training walkthrough](#53-extract-features-and-fit-the-train-only-encoder).
-
-Options: `--prepared`, `--split`, `--output`. Extracts S/L/P/M/D from original sentences and fits vocabulary/column ordering on train only. Writes `features.jsonl`, `targets.jsonl`, `encoder.json`, and `manifest.json`. Features/targets are local derived data, not public result CSVs.
-
-#### `src/training/nucle_benchmark.py`
-
-Run the command in [the training walkthrough](#54-train-and-compare-full-lr-and-decision-tree).
-
-Options: `--features`, `--split`, `--output`. Requires encoded features/targets/encoder and split metadata. Searches Full LR/Tree grids using train/validation, then writes selected metrics, timing, and validation predictions. It does not perform final locked test scoring. Its saved validation predictions are inputs to historical thread/sensitivity diagnostics.
-
-#### `src/training/nucle_ablation.py`
-
-Run the command in [the training walkthrough](#55-run-feature-ablations).
-
-Options: `--features`, `--split`, `--output`, repeatable `--variant`. By default runs all six historical variants. A restricted example is `--variant S+L`; quote a variant name containing spaces if one is added later. Masked variants additionally read the canonical preparation directory and original parses. Writes run summaries and validation predictions; this is not the final 52-fit evaluation stage. Preserve its canonical path for downstream historical readers.
-
-#### `src/training/nucle_final_selection.py` (historical, fixed paths)
-
-```bash
-uv run --no-sync python -m src.training.nucle_final_selection
-```
-
-Review the validation selection and checkpoints before freezing them:
-
-```bash
-uv run --no-sync python -m src.training.nucle_final_selection --freeze
-```
-
-The first command performs 40 added grid fits plus 12 historical refits, reconstructs encoders, and writes checkpoints/validation evidence under `reports/final_evaluation/`. The second separately freezes inputs/checkpoints into `lock.json`/`lock.sha256`; run it only after reviewing selection output. Requires canonical features/preparation/split, `reports/nucle_feature_ablation/` summaries/predictions, historical POS evidence, and the genuine `docs/final_evaluation_protocol.md`.
-
-The fitting branch refuses an existing final-evaluation directory; freeze refuses an existing lock. There is no general `--output` or `--help` parser. The public export cannot satisfy an original research lock merely by copying aggregate results.
+| File | CLI options | Instructions |
+|---|---|---|
+| [nucle_pos.py](../src/features/nucle_pos.py) | `--prepared`, `--split`, `--output` | [5.1](#51-fit-the-pos-baseline) |
+| [nucle_features.py](../src/features/nucle_features.py) | `--prepared`, `--split`, `--output` | [5.2](#52-extract-features-and-fit-the-encoder) |
+| [nucle_benchmark.py](../src/training/nucle_benchmark.py) | `--features`, `--split`, `--output` | [5.3](#53-train-the-full-lr-and-decision-tree-benchmark) |
+| [nucle_ablation.py](../src/training/nucle_ablation.py) | `--features`, `--split`, `--output`, repeatable `--variant` | [5.4](#54-train-feature-ablations) |
+| [nucle_final_selection.py](../src/training/nucle_final_selection.py) | Fixed-path fitting or `--freeze`; no argparse help | [7.2](#72-historical-selection-and-evaluation) |
 
 ### D. BERT training
 
-#### `src/training/bert_small_experiment.py` (recommended)
+[`bert_small_experiment.py`](../src/training/bert_small_experiment.py) is the current runner; follow [section 6](#6-run-a-new-bert-small-experiment).
 
-Needs `transformers`, prepared v2 samples, the fixed split, and local pretrained files referenced by `reports/contextual_model_validation/model_source.json`. The [pretrained setup instructions](RUNNING.md#6-run-a-new-bert-small-experiment) create that metadata; the runner itself uses local files only. Configuration is [configs/bert_small_training.json](../configs/bert_small_training.json).
+| Subcommand | Options |
+|---|---|
+| `check` | `--config` (defaults to the supplied config) |
+| `train` | `--config`, required `--output`, optional `--resume` |
+| `select` | Required `--experiment` |
+| `test` | Required `--selection`, required `--output` |
 
-Follow [section 6](#6-run-a-new-bert-small-experiment) for separate check, train, optional resume, select, and test steps, including expected outputs.
-
-Run `--resume` only to continue an interrupted, unlocked experiment, not as a required step after a successful train. Subcommands/options:
-
-| Subcommand | Options | Behavior/output |
-|---|---|---|
-| `check` | `--config` | Validate train/validation inputs and small forwards; no training |
-| `train` | `--config`, required `--output`, optional `--resume` | Histories, learning curves, best checkpoints, validation predictions, summaries, resumable optimizer state |
-| `select` | required `--experiment` | Require all declared seeds/runs, choose mean validation Macro-F1, fix primary, create `selection.json` and hash lock |
-| `test` | required `--selection`, required `--output` | Verify lock/checkpoints, then score selected seeds on test; write summary, class metrics and per-sample predictions locally |
-
-Use train/validation for development; selection locks before test. Test refuses an existing output, never refits train+validation, and does not choose the best test seed. The default config is 12 runs, up to 20 epochs each; it is not a fast smoke test. Copy the config and use a separate output for a declared pilot.
-
-#### `src/training/bert_span_classifier.py` (historical CLS)
-
-```bash
-uv run --no-sync python -m src.training.bert_span_classifier --pilot
-```
-
-For the full historical search, after restoring the original protocol:
-
-```bash
-uv run --no-sync python -m src.training.bert_span_classifier --train
-```
-
-Choose exactly one of `--pilot` or `--train` per invocation. Requires v2 samples/split and local pretrained metadata/files. `--pilot` runs 20 train batches and writes timing/tokenization information to `reports/contextual_model_validation/bert/pilot.json`; it performs optimization steps but is not the full benchmark. `--train` additionally requires the original `docs/bert_experiment_protocol.md`, runs the historical five-epoch search, and writes per-run checkpoint/history/predictions plus `selection.json`. It has no test path or configurable output flag and rejects a completed selection. Prefer the extended runner for a new experiment.
+[`bert_span_classifier.py`](../src/training/bert_span_classifier.py) is the historical runner: choose exactly one of `--pilot` or `--train`; see [7.2](#72-historical-selection-and-evaluation). Its checkpoints and selection format differ from the current runner's.
 
 ### E. Evaluation and diagnostics
 
-These tools need the named local experiment artifacts. Public aggregate CSVs under `results/` are for inspection and do not substitute for excluded row-level predictions, checkpoints, or original protocol/lock records.
-
-#### `src/evaluation/nucle_span_analysis.py`
-
-```bash
-uv run --no-sync python -m src.evaluation.nucle_span_analysis --output reports/span_analysis_new
-```
-
-Only option: `--output`. Requires canonical v2 preparation/split, `reports/nucle_pos_baseline/` and `reports/nucle_feature_ablation/` validation predictions/summaries, split summary, and essay-group mapping. Writes `summary.json`/`metrics.csv` for span, pair, and POS slices. Refuses an existing output and does not fit models or score test.
-
-#### `src/evaluation/nucle_final_evaluation.py` (historical lock required)
-
-Choose the appropriate stage; these are three supported positional modes, not argparse flags:
-
-```bash
-uv run --no-sync python -m src.evaluation.nucle_final_evaluation score
-uv run --no-sync python -m src.evaluation.nucle_final_evaluation bootstrap
-uv run --no-sync python -m src.evaluation.nucle_final_evaluation replay
-```
-
-- `score`: after a valid final-selection lock, read canonical preparation/features/encoders/checkpoints and score 2,368 test examples. Writes test-start/completion records, encoded test inputs, predictions, and subset metrics under `reports/final_evaluation/`. Refuses an already started/scored test.
-- `bootstrap`: read locked saved test predictions; write group weights, CI/contrast JSON and aggregate result CSVs. No fitting; can replace these derived files at its fixed paths.
-- `replay`: read saved encoded test inputs/checkpoints and compare against recorded predictions, then write `checkpoint_replay.json`. It checks frozen inference, not a new training run.
-
-All modes verify the original lock. The public curated tree lacks original private inputs and differs from historical locked source, so a fresh clone cannot pass that lock. Restore a complete compatible research workspace rather than editing the lock or suppressing checks. There is no shared `--output`/`--help` interface.
-
-#### `src/evaluation/bert_final_analysis.py`
-
-```bash
-uv run --no-sync python -m src.evaluation.bert_final_analysis --experiment reports/bert_small_experiment --output reports/bert_analysis_new
-```
-
-Options: `--experiment`, `--output`. Requires a complete locked/tested extended BERT experiment plus compatible classical `reports/final_evaluation/` predictions, scoring/hash records, bootstrap results/weight array, and `reports/evaluation_followup/reviewed_overall_results.csv`. Corpus access and canonical preparation are additionally required by its private audit-packet step. It verifies saved predictions/checkpoints, produces model/class/grid/seed/paired tables and figures, and creates local private audit outputs. It does not train or generate new checkpoint predictions. Output must not exist; its full workflow cannot run using public aggregates alone. Shared `scores`/bootstrap/selection helpers are also exercised by synthetic tests.
-
-#### `src/evaluation/bert_checkpoint_verification.py` (historical CLS)
-
-```bash
-uv run --no-sync python -m src.evaluation.bert_checkpoint_verification
-```
-
-No CLI options. Requires the old CLS `reports/contextual_model_validation/bert/selection.json`, selected checkpoint/tokenizer directories, their saved validation predictions, preparation/split, and local model metadata. Re-evaluates train/validation to assert saved validation predictions match; writes `checkpoint_replay.json` at that fixed location, possibly replacing it. It does not access test or fit weights. This loader is for old CLS checkpoints, not the extended span-mean wrapper; the current runner performs its own checkpoint replay checks.
-
-#### `src/evaluation/bert_learning_diagnostics.py` (historical train-only probes)
-
-```bash
-uv run --no-sync python -m src.evaluation.bert_learning_diagnostics
-```
-
-No CLI options. Requires the old BERT selection/primary checkpoint, original pretrained files, v2 samples/split, and genuine `docs/bert_learning_diagnostics_protocol.md`. `reports/bert_learning_diagnostics/` must not exist. Creates selected train IDs, input/gradient/marker checks, small-set training histories/checkpoints/summary and replay evidence. It performs train-only optimization on 100 selected examples; it is not the full-corpus benchmark and does not compute validation/test scores.
-
-#### `src/evaluation/bert_target_pair_probe.py`
-
-```bash
-uv run --no-sync python -m src.evaluation.bert_target_pair_probe
-```
-
-No CLI options. Requires canonical train samples/split and the old CLS primary checkpoint/selection. Uses the already existing `reports/bert_learning_diagnostics/` directory and writes `same_sentence_pairs.json`, refusing an existing file. Inspects up to 50 same-sentence, different-target train pairs with the fixed checkpoint. No training, validation/test scoring, or reselection.
-
-#### `src/evaluation/preprocessing_sensitivity_audit.py`
-
-```bash
-uv run --no-sync python -m src.evaluation.preprocessing_sensitivity_audit
-```
-
-No CLI options. Requires complete v1/v2 samples using the same IDs, the canonical grouped split, spaCy, and original benchmark validation predictions at `reports/nucle_feature_benchmark/validation_predictions.csv`. Fits fixed-configuration LR/POS for each preparation on train and evaluates validation, checking offsets/alignment. Reads old-policy samples from `data_set/processed/nucle_preparation_legacy/` and current samples from `data_set/processed/nucle_preparation/`. Creates a new `reports/contextual_model_validation/audit/` directory with `legacy_validation_predictions.csv`, `validation_predictions.csv`, a summary, and a private case packet. It refuses an existing directory; test is not scored.
-
-#### `src/evaluation/logistic_thread_sensitivity.py`
-
-```bash
-uv run --no-sync python -m src.evaluation.logistic_thread_sensitivity
-```
-
-No CLI options. Requires canonical features/encoder/split, original benchmark validation predictions, and the preceding sensitivity run's `validation_predictions.csv`. Refits the fixed LR at four and ten CPU threads on train, compares validation predictions, and writes `reports/contextual_model_validation/audit/thread_diagnostic.json`, potentially replacing it. This is a numerical-sensitivity probe, not a different test score or a reason to replace the published baseline.
+| File | Interface | Instructions |
+|---|---|---|
+| [nucle_span_analysis.py](../src/evaluation/nucle_span_analysis.py) | `--output` | [7.1](#71-current-validation-slice-analysis) |
+| [nucle_final_evaluation.py](../src/evaluation/nucle_final_evaluation.py) | Positional `score`, `bootstrap`, or `replay`; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
+| [bert_checkpoint_verification.py](../src/evaluation/bert_checkpoint_verification.py) | No CLI options; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
+| [bert_learning_diagnostics.py](../src/evaluation/bert_learning_diagnostics.py) | No CLI options; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
+| [bert_target_pair_probe.py](../src/evaluation/bert_target_pair_probe.py) | No CLI options; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
+| [preprocessing_sensitivity_audit.py](../src/evaluation/preprocessing_sensitivity_audit.py) | No CLI options; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
+| [logistic_thread_sensitivity.py](../src/evaluation/logistic_thread_sensitivity.py) | No CLI options; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
+| [bert_final_analysis.py](../src/evaluation/bert_final_analysis.py) | `--experiment`, `--output` | [7.3](#73-historical-bertclassical-analysis) |
 
 ### F. Shared modules and package files
 
@@ -530,7 +472,7 @@ frame = documents_to_dataframe(parser.documents)
 print(frame[["annotation_id", "error_span", "error_type", "valid_offset"]].to_string(index=False))
 ```
 
-Expected: one annotation, ID `0`, span `was`, label `SVA`, and a valid offset. The parser produces document/annotation objects; the converter produces a DataFrame. For an authorized real SGML file, import `Path` from `pathlib` and `load_nucle` from `src.data.nucle_sgml`, then call `load_nucle(Path("data_set/raw/nucle3.2.sgml"))` to supply documents to the same converter. To export the actual CSV and understanding report, use the `data_understanding.py` command in B.
+Expected: one annotation, ID `0`, span `was`, label `SVA`, and a valid offset. The parser produces document/annotation objects; the converter produces a DataFrame. For an authorized real SGML file, import `Path` from `pathlib` and `load_nucle` from `src.data.nucle_sgml`, then call `load_nucle(Path("data_set/raw/nucle3.2.sgml"))` to supply documents to the same converter. To export the actual CSV and understanding report, use the command in [step 4.2](#42-export-annotations).
 
 #### Actual use: sentence-boundary helper
 
@@ -591,11 +533,11 @@ Expected: `["ArtOrDet", "SVA"]`. The numeric feature is deliberately synthetic; 
 
 After leaving the Python interpreter, use the [demo command in section 3](#3-run-the-synthetic-demonstration) to exercise `TrainOnlyEncoder` and `fit_logistic` with synthetic sentence/span inputs.
 
-For research LR/Tree training, use `src.training.nucle_benchmark` or `src.training.nucle_ablation` in C with their required prepared features. These runners construct the inputs and call the library models; there is no independent `nucle_logistic.py` training CLI.
+For research LR/Tree training, use `src.training.nucle_benchmark` or `src.training.nucle_ablation` in [section 5](#5-train-classical-baselines-and-models) with their required prepared features. These runners construct the inputs and call the library models; there is no independent `nucle_logistic.py` training CLI.
 
 For `src/models/bert_span_readout.py`, install the optional BERT dependencies, then use the individual command for [tests/test_bert_readout.py in G](#g-individual-tests) to exercise forwards, span masks, and gradients.
 
-The tests create random tiny BERT models without downloading pretrained checkpoints. Real training calls the wrapper from `src.training.bert_small_experiment` in D. The wrapper cannot perform a useful standalone forward without a base model, marker IDs, and token tensors. Package `__init__.py` files only establish importable packages; their import checks are the appropriate standalone check.
+The tests create random tiny BERT models without downloading pretrained checkpoints. Real training calls the wrapper from `src.training.bert_small_experiment` in [section 6](#6-run-a-new-bert-small-experiment). The wrapper cannot perform a useful standalone forward without a base model, marker IDs, and token tensors. Package `__init__.py` files only establish importable packages; their import checks are the appropriate standalone check.
 
 ### G. Individual tests
 
@@ -637,7 +579,7 @@ These files are consumed by a tool or viewed as artifacts; they are not standalo
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Read data flow, encoder/model design, and reproducibility boundaries. |
 | [docs/README.md](README.md) | Open the documentation index for a suggested reading order. |
 | [docs/RESULTS.md](RESULTS.md) | Read result interpretation, paired CIs, class tradeoffs, and limitations. |
-| [docs/RUNNING.md](RUNNING.md) | Canonical setup, workflow, per-file commands, API examples, and research-input requirements. |
+| [docs/RUNNING.md](RUNNING.md) | Setup, ordered workflows, CLI reference, API examples, and research-input requirements. |
 | [pyproject.toml](../pyproject.toml) | Declares project/dev dependencies; install them using [section 1](#1-install-the-environment). |
 | [pytest.ini](../pytest.ini) | Automatically loaded by `python -m pytest`; sets repository import path and test directory. |
 | [requirements-bert.txt](../requirements-bert.txt) | Optional BERT package pin; use its install command in [section 1](#1-install-the-environment). |
@@ -652,7 +594,7 @@ These files are consumed by a tool or viewed as artifacts; they are not standalo
 | [results/paired_differences.csv](../results/paired_differences.csv) | View paired BERT-primary model differences and CIs. |
 | [results/per_class_metrics.csv](../results/per_class_metrics.csv) | View per-model/class precision, recall, F1, support. |
 | [results/reports/bert-comparison.md](../results/reports/bert-comparison.md) | Read the extended BERT comparison and interpretation; no execution. |
-| [results/reports/final-report.md](../results/reports/final-report.md) | Read the complete English study with 34 tables and 14 references; no report generator required. |
+| [results/reports/final-report.md](../results/reports/final-report.md) | Read the complete English study; no report generator required. |
 | [results/reports/presentation.md](../results/reports/presentation.md) | Read the 12 English presentation sections and speaker notes. |
 | [results/seed_results.csv](../results/seed_results.csv) | View selected BERT seed/checkpoint outcomes and primary designation. |
 | [results/validation_grid.csv](../results/validation_grid.csv) | View BERT configuration means and sample standard deviations. |
