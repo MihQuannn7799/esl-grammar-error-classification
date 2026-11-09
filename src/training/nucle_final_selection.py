@@ -89,7 +89,7 @@ def grid(model):
 def run():
     if OUT.exists(): raise FileExistsError(OUT)
     OUT.mkdir(); torch.set_num_threads(10); start=time.perf_counter()
-    dump(OUT/'selection_started.json',{'at':now(),'protocol_sha256':sha(ROOT/'docs/final_evaluation_protocol.md'),'test_scored':False})
+    dump(OUT/'selection_started.json',{'at':now(),'test_scored':False})
     raw,targets,split,trids,vaids=load_rows(FEAT,SPLIT)
     for name,h in read(FEAT/'manifest.json')['outputs'].items(): assert sha(FEAT/name)==h
     old=read(OLD/'summary.json'); assert old['split_manifest_sha256']==sha(SPLIT/'split_manifest.csv')
@@ -133,7 +133,7 @@ def run():
 def freeze():
     assert not (OUT/'lock.json').exists()
     s=read(OUT/'selection_summary.json'); assert len(s['selected'])==18 and s['unique_fits']==52
-    paths=[PREP/'samples.jsonl',PREP/'manifest.json',PREP/'manifest.sha256',SPLIT/'split_manifest.csv',SPLIT/'essay_groups.csv',FEAT/'features.jsonl',FEAT/'targets.jsonl',FEAT/'encoder.json',FEAT/'manifest.json',ROOT/'docs/final_evaluation_protocol.md',ROOT/'uv.lock',ROOT/'pyproject.toml']
+    paths=[PREP/'samples.jsonl',PREP/'manifest.json',PREP/'manifest.sha256',SPLIT/'split_manifest.csv',SPLIT/'essay_groups.csv',FEAT/'features.jsonl',FEAT/'targets.jsonl',FEAT/'encoder.json',FEAT/'manifest.json',ROOT/'uv.lock',ROOT/'pyproject.toml']
     paths+=list((ROOT/'src').rglob('*.py'))+list((OUT/'checkpoints').glob('*.pt'))
     paths +=[OUT/n for n in ['full_encoder.json','masked_encoder.json','pos_rule.json','selection_summary.json','encoder_verification.json','validation_predictions.csv']]
     lock={'locked_at':now(),'label_order':LABELS,'threads':10,'bootstrap_seed':20261023,'bootstrap_replicates':1000,'python':platform.python_version(),'torch':str(torch.__version__),'selected':s['selected'],'hashes':{str(p.relative_to(ROOT)):sha(p) for p in paths},'test_scored_at_lock':False}

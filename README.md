@@ -73,6 +73,7 @@ results/      Aggregate CSVs, figures, and English Markdown reports
 |---|---|
 | Understand the pipeline and feature encoder | [Architecture](docs/ARCHITECTURE.md) |
 | Install, test, or train a new experiment | [Running the project](docs/RUNNING.md) |
+| Score LR, DT, Majority, and POS rule on test | [Classical checkpoint, freeze, test, and bootstrap workflow](docs/RUNNING.md#55-score-lr-dt-majority-and-pos-rule-on-test) |
 | Find a command or usage example for a specific file | [File-by-file reference](docs/RUNNING.md#10-file-by-file-reference) |
 | Interpret scores and confidence intervals | [Results and limitations](docs/RESULTS.md) |
 | Read the complete study | [Final report: 34 tables and 14 references](results/reports/final-report.md) |

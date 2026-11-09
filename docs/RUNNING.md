@@ -9,6 +9,7 @@ Choose the workflow that matches your available inputs:
 | Try the code or run synthetic tests | Git checkout and installed dependencies | Sections 1–3 |
 | Prepare the research corpus | Your local NUCLE SGML file | Section 4 |
 | Train classical models on train/validation | Section 4 outputs and the base environment | Section 5 |
+| Score LR, DT, Majority, and POS rule on test | Complete classical validation evidence and a frozen selection | Section 5.5 |
 | Train, select, and test a new BERT experiment | Section 4 outputs, BERT dependencies, and local pretrained weights | Section 6 |
 | Run diagnostics or inspect historical tools | The specific experiment artifacts listed for each tool | Section 7 |
 | Find a file's CLI, API, test, or artifact usage | See each entry's requirements | Section 10 |
@@ -54,6 +55,14 @@ uv run --no-sync python -m pytest tests -q -ra
 The tests use synthetic SGML, features, and tiny locally initialized BERT models. Downloader tests mock HTTP. BERT-dependent tests skip when `transformers` is absent; the real NUCLE boundary-fixture module skips when its excluded fixture is absent. Installing the optional BERT requirement enables those BERT tests without downloading pretrained weights.
 
 Use [tests/README.md](../tests/README.md) for scope and [individual test commands](#g-individual-tests) to run one module. A passing synthetic suite checks code behavior; it does not run the research benchmark.
+
+For a focused check of classical features, LR/DT benchmark behavior, and final-evaluation helpers, run:
+
+```shell
+uv run --no-sync python -m pytest tests/test_nucle_features.py tests/test_nucle_benchmark.py tests/test_final_evaluation.py -q
+```
+
+To obtain **test-partition scores for LR, DT, Majority, and POS rule**, follow [section 5.5](#55-score-lr-dt-majority-and-pos-rule-on-test). The pytest command above uses synthetic inputs and does not produce those research scores.
 
 ## 3. Run the synthetic demonstration
 
@@ -192,7 +201,105 @@ For an optional single-variant pilot, use a separate output directory:
 uv run --no-sync python -m src.training.nucle_ablation --features data_set/features/nucle_features --split data_set/split/nucle_group_split --variant S+L --output reports/nucle_ablation_pilot
 ```
 
-A partial pilot does not supply the complete six-variant evidence required by historical final selection. Classical training here ends with validation summaries and predictions. The separate historical checkpoint/freeze/test tools have additional requirements in section 7.
+A partial pilot does not supply the complete six-variant evidence required by final selection. Steps 5.1–5.4 end with validation summaries and predictions. Continue below for checkpoint creation, locking, and test scoring.
+
+### 5.5. Score LR, DT, Majority, and POS rule on test
+
+The existing classical test runner evaluates **all four models in one invocation**, together with the LR/DT feature variants. `DT` is named `Tree` in its saved artifacts. There is no separate `nucle_benchmark test` or `nucle_pos --test` command.
+
+#### 5.5.1. Check the required inputs
+
+Use the base environment from section 1; BERT dependencies and pretrained BERT weights are unnecessary. Complete sections 4 and 5.1–5.4 with the canonical paths below, or restore a compatible complete research workspace:
+
+| Required path | Used for |
+|---|---|
+| `data_set/processed/nucle_preparation/` | Prepared samples and preparation manifests |
+| `data_set/split/nucle_group_split/` | `split_manifest.csv` and `essay_groups.csv` |
+| `data_set/features/nucle_features/` | Encoded features, targets, encoder metadata, and manifest |
+| `reports/nucle_pos_baseline/validation_predictions.csv` | Checking that the reconstructed train-fitted POS rule reproduces validation |
+| `reports/nucle_feature_ablation/summary.json` and `validation_predictions.csv` | Selected LR/DT configurations and validation predictions for all six variants |
+
+**Research data and fitted artifacts are not distributed in the public checkout.** Sections 4–5.4 create the data/validation inputs needed for a new run after you obtain the corpus. Exact historical reproduction requires the original matching code, inputs, and environment.
+
+Classical selection and freezing do not read or hash protocol documents. No protocol file is needed for this workflow.
+
+This runner has fixed input/output paths and requires **exactly 2,368 test samples** at scoring. It does not support arbitrary split sizes, `--output`, or individual model filters. Use a separate experiment checkout if those canonical directories already hold another experiment. For a new selection, `reports/final_evaluation/` must not exist. If a compatible frozen selection already exists, skip checkpoint creation and freezing.
+
+#### 5.5.2. Create the selected checkpoints
+
+```shell
+uv run --no-sync python -m src.training.nucle_final_selection
+```
+
+This reconstructs the full and masked train-only encoders and POS rule, refits the 12 LR/DT configurations selected for the six existing variants, and searches 40 configurations for Full-minus-P/M. It requires exact replay of the earlier validation predictions and eligible LR convergence before completing. It uses 10 CPU threads. No test scores are computed and there is no train+validation refit.
+
+Inspect `reports/final_evaluation/selection_summary.json`, `encoder_verification.json`, and convergence/replay evidence. A completed run prints `SELECTION COMPLETE`. Its outputs include `checkpoints/`, `full_encoder.json`, `masked_encoder.json`, `pos_rule.json`, and validation predictions. A failed or partial selection is not ready to freeze.
+
+#### 5.5.3. Freeze the reviewed selection
+
+```shell
+uv run --no-sync python -m src.training.nucle_final_selection --freeze
+```
+
+This writes `reports/final_evaluation/lock.json` and `lock.sha256`, covering the selected checkpoints, source, encoders, and input artifacts. It prints `LOCKED` and a checksum. Keep the covered files unchanged for scoring, bootstrap, and replay.
+
+#### 5.5.4. Score the frozen models on test
+
+```shell
+uv run --no-sync python -m src.evaluation.nucle_final_evaluation score
+```
+
+The command verifies the lock, parses the test sentences, transforms them with the frozen train-fitted encoders, and predicts with the selected models. Majority uses the train-majority label stored in `pos_rule.json`; POS uses its frozen rules/lookup. LR and DT load their train-fitted checkpoints. Nothing is fitted or selected using test labels.
+
+It prints `TEST SCORED` with Macro-F1 values. Find the four headline models under `test_metrics.json` → `all` → `models`:
+
+| Requested model | JSON key / prediction column |
+|---|---|
+| Logistic Regression, Full | `LR_03` |
+| Decision Tree, Full | `Tree_03` |
+| Majority | `Majority` |
+| POS rule | `POS` |
+
+There are 20 pipeline names in total: 18 LR/DT names and the two baselines. Full-minus-D reuses S+L+P+M, so there are 16 distinct LR/DT checkpoints. Use the Full keys above for the main comparison rather than selecting a variant by its test score.
+
+| Output under `reports/final_evaluation/` | Contents |
+|---|---|
+| `test_metrics.json` | Overall and slice metrics; each model has `macro_f1`, `accuracy`, `per_label`, and `confusion` |
+| `test_predictions.csv` | One row per test sample, gold label, group metadata, and predictions for every pipeline |
+| `test_encoded.pt` | Frozen test feature rows for LR/DT checkpoint replay |
+| `test_scoring_started.json`, `test_scoring_complete.json` | Scoring lifecycle, counts, and hashes |
+
+The scorer refuses a second run when test predictions or a scoring-start record already exist. If test was already scored, read those artifacts or use replay below. An interrupted scoring attempt retains its start record; inspect the failure and preserve that evidence instead of deleting the guard to rerun blindly.
+
+To print just the four overall results, start `uv run --no-sync python` and paste:
+
+```python
+import json
+from pathlib import Path
+
+models = json.loads(
+    Path("reports/final_evaluation/test_metrics.json").read_text(encoding="utf-8")
+)["all"]["models"]
+for name in ("LR_03", "Tree_03", "Majority", "POS"):
+    metric = models[name]
+    print(name, "Macro-F1:", round(metric["macro_f1"], 4),
+          "Accuracy:", round(metric["accuracy"], 4))
+```
+
+These are scores from your saved run. The published reference values are in [results/overall_results.csv](../results/overall_results.csv); reading that table does not execute the models. Enter `exit()` before continuing with shell commands.
+
+#### 5.5.5. Compute confidence intervals and replay checkpoints
+
+After successful scoring:
+
+```shell
+uv run --no-sync python -m src.evaluation.nucle_final_evaluation bootstrap
+uv run --no-sync python -m src.evaluation.nucle_final_evaluation replay
+```
+
+`bootstrap` reads the saved predictions and writes `bootstrap.json` and `bootstrap_group_weights.npy` using 1,000 paired connected-group replicates with seed 20261023 from the lock. The four overall CIs are under `slices` → `all` → `models` → the model key → `ci95`; paired contrasts are in `differences`. It does not call the models again, but replaces these derived bootstrap outputs when repeated.
+
+`replay` loads the saved test encodings and checks every LR/DT checkpoint prediction against `test_predictions.csv`. Success prints `CHECKPOINT REPLAY EXACT` and writes `checkpoint_replay.json` with zero disagreements. This mode checks LR/DT checkpoint inference; it does not reparse test text or regenerate Majority/POS predictions. Both modes verify the lock before running and neither selects a new model.
 
 ## 6. Run a new BERT-small experiment
 
@@ -302,11 +409,11 @@ Its input paths are fixed: canonical preparation/split, `reports/nucle_pos_basel
 
 ### 7.2. Historical selection and evaluation
 
-These are separate tools for a complete research workspace. They are not required by sections 4–6, and a public clone lacks some required protocols/evidence. Old locks record their original source/artifact paths and hashes; a newly prepared dataset or a directory rename does not make it compatible with an old lock.
+The classical checkpoint/freeze/test workflow is explained step by step in [section 5.5](#55-score-lr-dt-majority-and-pos-rule-on-test). The remaining historical tools below are optional and need a complete research workspace. A public clone lacks some required protocols/evidence. Old locks record their original source/artifact paths and hashes; a newly prepared dataset or a directory rename does not make it compatible with an old lock.
 
 | Tool | Invocation after `uv run --no-sync python -m` | Required evidence and behavior |
 |---|---|---|
-| Classical final selection | `src.training.nucle_final_selection` | Canonical features/preparation/split, complete POS/ablation evidence, and genuine `docs/final_evaluation_protocol.md`. Performs 40 new grid fits and 12 prior-configuration refits, requires prediction replay, and creates checkpoints plus selection evidence under `reports/final_evaluation/`. It creates the checkpoints; pre-existing final checkpoints or locks are not inputs to this fitting stage. |
+| Classical final selection | `src.training.nucle_final_selection` | Canonical features/preparation/split and complete POS/ablation evidence. Performs 40 new grid fits and 12 prior-configuration refits, requires prediction replay, and creates checkpoints plus selection evidence under `reports/final_evaluation/`. It creates the checkpoints; pre-existing final checkpoints or locks are not inputs to this fitting stage. |
 | Freeze classical selection | `src.training.nucle_final_selection --freeze` | Completed, reviewed selection outputs; creates `lock.json`/`lock.sha256`. Run separately after selection. |
 | Classical test | `src.evaluation.nucle_final_evaluation score` | Compatible frozen selection, code, and inputs; scores exactly 2,368 test samples once at its fixed paths. |
 | Classical bootstrap | `src.evaluation.nucle_final_evaluation bootstrap` | Valid lock and saved classical test predictions; writes group-resampling weights, confidence intervals, and aggregate tables. Can replace those derived outputs. |
@@ -360,7 +467,7 @@ Before retrying a failed stage, use its actual error to choose the next action:
 | Custom paths break the masked ablation or a diagnostic | Those tools include fixed input paths. Use canonical paths in a separate experiment checkout; changing `--output` alone cannot redirect their inputs. |
 | BERT count/class/group check fails | Compare prepared IDs and `split_summary.json` with the chosen config. Confirm partition membership and all five labels; do not suppress the guard. |
 | Resume or lock verification fails | Check saved config, paths, code, environment, and hashes. Preserve the original experiment; intentional changes need a new run. |
-| Historical protocol/checkpoint/evidence is missing | Use the current workflows or restore the genuine matching research artifacts. Placeholder files do not satisfy the checks. |
+| Historical checkpoint/evidence or a historical BERT protocol is missing | Use the current workflows or restore the genuine matching research artifacts. Placeholder files do not satisfy the checks. |
 
 New output paths are for new experiments, not a way to retune against an already scored test. Preserve historical experiments with their original checkout, inputs, and locks. New preparation manifests record their current code/input snapshot; they do not claim compatibility with an old research lock.
 
@@ -390,7 +497,7 @@ Runnable modules are listed below with their options and the workflow that expla
 | [nucle_features.py](../src/features/nucle_features.py) | `--prepared`, `--split`, `--output` | [5.2](#52-extract-features-and-fit-the-encoder) |
 | [nucle_benchmark.py](../src/training/nucle_benchmark.py) | `--features`, `--split`, `--output` | [5.3](#53-train-the-full-lr-and-decision-tree-benchmark) |
 | [nucle_ablation.py](../src/training/nucle_ablation.py) | `--features`, `--split`, `--output`, repeatable `--variant` | [5.4](#54-train-feature-ablations) |
-| [nucle_final_selection.py](../src/training/nucle_final_selection.py) | Fixed-path fitting or `--freeze`; no argparse help | [7.2](#72-historical-selection-and-evaluation) |
+| [nucle_final_selection.py](../src/training/nucle_final_selection.py) | Fixed-path fitting or `--freeze`; no argparse help | [5.5](#55-score-lr-dt-majority-and-pos-rule-on-test) |
 
 ### D. BERT training
 
@@ -410,7 +517,7 @@ Runnable modules are listed below with their options and the workflow that expla
 | File | Interface | Instructions |
 |---|---|---|
 | [nucle_span_analysis.py](../src/evaluation/nucle_span_analysis.py) | `--output` | [7.1](#71-current-validation-slice-analysis) |
-| [nucle_final_evaluation.py](../src/evaluation/nucle_final_evaluation.py) | Positional `score`, `bootstrap`, or `replay`; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
+| [nucle_final_evaluation.py](../src/evaluation/nucle_final_evaluation.py) | Positional `score`, `bootstrap`, or `replay`; fixed paths | [5.5](#55-score-lr-dt-majority-and-pos-rule-on-test) |
 | [bert_checkpoint_verification.py](../src/evaluation/bert_checkpoint_verification.py) | No CLI options; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
 | [bert_learning_diagnostics.py](../src/evaluation/bert_learning_diagnostics.py) | No CLI options; fixed paths | [7.2](#72-historical-selection-and-evaluation) |
 | [bert_target_pair_probe.py](../src/evaluation/bert_target_pair_probe.py) | No CLI options; fixed paths | [7.2](#72-historical-selection-and-evaluation) |

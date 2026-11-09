@@ -5,7 +5,7 @@
 1. Follow [environment setup](RUNNING.md#1-install-the-environment), then run the [synthetic demo](RUNNING.md#3-run-the-synthetic-demonstration) to see the known-span prediction contract.
 2. Read [Architecture](ARCHITECTURE.md) for grouping, train-only encoding, and model data flow.
 3. Read [Results](RESULTS.md) for model selection, confidence intervals, and limitations.
-4. Use [Running the project](RUNNING.md#4-research-data-requirements) for research inputs and training workflows.
+4. Use [Running the project](RUNNING.md#4-research-data-requirements) for research inputs and training workflows, then follow [LR/DT/Majority/POS test scoring](RUNNING.md#55-score-lr-dt-majority-and-pos-rule-on-test) or [BERT test scoring](RUNNING.md#67-score-the-locked-checkpoints-on-test).
 
 The [file-by-file reference](RUNNING.md#10-file-by-file-reference) is the canonical source for every script command, module API example, individual test command, and configuration/result file. README introduces the project; RUNNING.md owns setup and execution instructions.
 
