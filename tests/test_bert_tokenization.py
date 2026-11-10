@@ -1,7 +1,7 @@
 import pytest
 pytest.importorskip("transformers", reason="Install requirements-bert.txt for BERT tests")
 from transformers import BertTokenizerFast
-from src.training.bert_span_classifier import encode_span
+from src.features.bert_tokenization import encode_span
 
 @pytest.fixture(scope='module')
 def tok(tmp_path_factory):

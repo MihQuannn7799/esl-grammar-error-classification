@@ -31,12 +31,12 @@ from transformers import get_linear_schedule_with_warmup
 
 from src.evaluation.metrics import LABELS, scores
 from src.models.bert_span_readout import BertReadout, target_mask
-from src.training.bert_span_classifier import encode_span
+from src.features.bert_tokenization import encode_span
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = ROOT / "configs/bert_small_training.json"
 CODE_FILES = (
-    "src/training/bert_small_experiment.py", "src/training/bert_span_classifier.py",
+    "src/training/bert_small_experiment.py", "src/features/bert_tokenization.py",
     "src/models/bert_span_readout.py", "src/evaluation/metrics.py", "src/data/constants.py",
 )
 DEFAULTS = {

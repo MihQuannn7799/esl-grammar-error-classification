@@ -9,6 +9,8 @@
 
 The [file-by-file reference](RUNNING.md#10-file-by-file-reference) is the canonical source for every script command, module API example, individual test command, and configuration/result file. README introduces the project; RUNNING.md owns setup and execution instructions.
 
+For `src/evaluation/`, start with [which files to run or skip](RUNNING.md#70-which-evaluation-files-should-i-run). The public directory contains two runnable tools and three shared/package modules. Historical diagnostics requiring private artifacts are excluded.
+
 ## Reports and evidence
 
 | Document | Contents |

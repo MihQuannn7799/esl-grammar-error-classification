@@ -43,6 +43,17 @@ dist/
 /src/evaluation/verify_final_results.py
 /src/evaluation/reproduce_evaluation_pipeline.py
 
+# Historical tools require private artifacts and are kept local only.
+/src/evaluation/bert_checkpoint_verification.py
+/src/evaluation/bert_learning_diagnostics.py
+/src/evaluation/bert_target_pair_probe.py
+/src/evaluation/preprocessing_sensitivity_audit.py
+/src/evaluation/logistic_thread_sensitivity.py
+/src/evaluation/bert_final_analysis.py
+/src/training/bert_span_classifier.py
+/tests/test_bert_final_analysis.py
+/tests/test_bert_span_classifier.py
+
 # Public reports are maintained as English Markdown.
 /results/reports/*.pdf
 /results/reports/*.docx
